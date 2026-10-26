@@ -1,0 +1,43 @@
+# MySQL 8.0 y Mailpit para desarrollo LOCAL. No es el compose de producción (ese queda para la fase 2).
+# SIN VERIFICAR EN ESTA MÁQUINA: quien lo escribió no tiene Docker instalado; probarlo la primera vez que se use.
+#
+# Uso (desde la raíz del repo; toma DB_PASSWORD de backend/.env para que coincida con tu configuración):
+#   docker compose --env-file backend/.env -f deploy/docker-compose.local.yml up -d
+#   docker compose -f deploy/docker-compose.local.yml down        (conserva los datos)
+#   docker compose -f deploy/docker-compose.local.yml down -v     (BORRA los datos locales)
+#
+# MySQL queda en localhost:3307 (no 3306, para no chocar con un MySQL ya instalado) con las bases hellofriend y
+# hellofriend_test (deploy/mysql/init.sql). Mailpit: SMTP en 1025 e interfaz en http://localhost:8025.
+# Con este MySQL, usa DB_URL y TEST_DB_URL con puerto 3307 en backend/.env.
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      # Valores solo para tu PC. MYSQL_DATABASE y MYSQL_USER crean la base hellofriend y el usuario hellofriend.
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local-cambiar}
+      MYSQL_DATABASE: hellofriend
+      MYSQL_USER: hellofriend
+      MYSQL_PASSWORD: ${DB_PASSWORD:-cambiar-por-tu-clave-local}
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - datos_mysql:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  datos_mysql:
