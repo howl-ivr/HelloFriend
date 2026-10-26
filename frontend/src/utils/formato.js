@@ -15,9 +15,23 @@ export function fechaHora(fecha) {
 
 export const ESTADOS = {
   PENDIENTE: { etiqueta: 'Pendiente de revisión', clase: 'bg-amber-100 text-amber-800' },
-  PUBLICADA: { etiqueta: 'Publicada', clase: 'bg-blue-100 text-blue-800' },
+  OBSERVADA: { etiqueta: 'Observada', clase: 'bg-orange-100 text-orange-800' },
+  PUBLICADA: { etiqueta: 'Aprobada', clase: 'bg-blue-100 text-blue-800' },
   RECHAZADA: { etiqueta: 'Rechazada', clase: 'bg-red-100 text-red-800' },
+  EN_ATENCION: { etiqueta: 'En atención', clase: 'bg-indigo-100 text-indigo-800' },
   RESUELTA: { etiqueta: 'Resuelta', clase: 'bg-green-100 text-green-800' }
+}
+
+export const EVENTOS = {
+  CREADA: 'Enviada a revisión',
+  EDITADA: 'Editada por el estudiante',
+  OBSERVADA: 'Observada por la dirección',
+  REENVIADA: 'Reenviada a revisión',
+  APROBADA: 'Aprobada',
+  RECHAZADA: 'Rechazada',
+  EN_ATENCION: 'Pasó a en atención',
+  RESUELTA: 'Resuelta',
+  CONFIRMADA: 'Confirmada por un estudiante'
 }
 
 export const PRIORIDADES = {

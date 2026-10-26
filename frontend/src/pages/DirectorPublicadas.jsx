@@ -33,6 +33,7 @@ export default function DirectorPublicadas() {
 
       <div className="flex gap-2 mb-4">
         <button onClick={() => cambiarEstado('PUBLICADA')} className={pestaña('PUBLICADA')}>Por atender</button>
+        <button onClick={() => cambiarEstado('EN_ATENCION')} className={pestaña('EN_ATENCION')}>En atención</button>
         <button onClick={() => cambiarEstado('RESUELTA')} className={pestaña('RESUELTA')}>Resueltas</button>
       </div>
 
@@ -65,7 +66,7 @@ export default function DirectorPublicadas() {
                 <p className="text-xs text-suave mt-1">
                   {REACCIONES.map(r => `${r.icono} ${i.reacciones[r.tipo]}`).join('   ')}   💬 {i.totalComentarios}
                 </p>
-                {estado === 'PUBLICADA' && (
+                {estado !== 'RESUELTA' && (
                   <div className="mt-3">
                     <AccionesDirector incidencia={i} onHecho={() => setLista(l => l.filter(x => x.id !== i.id))} />
                   </div>

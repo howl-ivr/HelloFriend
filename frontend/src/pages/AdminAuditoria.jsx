@@ -7,10 +7,16 @@ const ACCIONES = {
   CUENTA_REGISTRADA: 'Cuenta registrada',
   CUENTA_DESACTIVADA: 'Cuenta desactivada',
   ROL_ASIGNADO: 'Rol asignado',
+  CURSO_REGISTRADO: 'Curso registrado',
   CANAL_CREADO: 'Canal creado',
+  CANAL_DESACTIVADO: 'Canal desactivado',
   INCIDENCIA_REGISTRADA: 'Incidencia registrada',
+  INCIDENCIA_EDITADA: 'Incidencia editada',
+  INCIDENCIA_OBSERVADA: 'Incidencia observada',
+  INCIDENCIA_REENVIADA: 'Incidencia reenviada',
   INCIDENCIA_APROBADA: 'Incidencia aprobada',
   INCIDENCIA_RECHAZADA: 'Incidencia rechazada',
+  INCIDENCIA_EN_ATENCION: 'Incidencia en atención',
   INCIDENCIA_RESUELTA: 'Incidencia resuelta'
 }
 

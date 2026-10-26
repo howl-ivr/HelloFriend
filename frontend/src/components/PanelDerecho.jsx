@@ -39,7 +39,9 @@ function LoMasConfirmado({ version }) {
 
 const RESUMEN = [
   { estado: 'PENDIENTE', etiqueta: 'En revisión', color: 'bg-amber-400' },
-  { estado: 'PUBLICADA', etiqueta: 'Publicadas', color: 'bg-marca' },
+  { estado: 'OBSERVADA', etiqueta: 'Observadas', color: 'bg-orange-400' },
+  { estado: 'PUBLICADA', etiqueta: 'Aprobadas', color: 'bg-marca' },
+  { estado: 'EN_ATENCION', etiqueta: 'En atención', color: 'bg-indigo-400' },
   { estado: 'RESUELTA', etiqueta: 'Resueltas', color: 'bg-confirma' },
   { estado: 'RECHAZADA', etiqueta: 'Rechazadas', color: 'bg-red-500' }
 ]

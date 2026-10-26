@@ -65,6 +65,8 @@ function semilla() {
       {
         id: 3, canalId: 2, autorId: 6, estado: 'RESUELTA', fechaCreacion: haceHoras(200),
         categoria: 'Infraestructura y equipos',
+        fechaAtencion: haceHoras(170), fechaResolucion: haceHoras(150),
+        solucion: 'Se instaló un proyector nuevo en el aula y se verificó su funcionamiento con el docente del curso.',
         titulo: 'El aula asignada no tiene proyector',
         descripcion: 'En las sesiones de los martes no funciona el proyector y la clase se dicta sin diapositivas.',
         revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(190), directorId: 2 }
@@ -86,16 +88,33 @@ function semilla() {
       {
         id: 6, canalId: 4, autorId: 5, estado: 'RESUELTA', fechaCreacion: haceHoras(2900),
         categoria: 'Comunicación y avisos',
+        fechaResolucion: haceHoras(2800),
+        solucion: 'Desde este periodo los cambios de aula se avisan por el campus virtual con 48 horas de anticipación.',
         titulo: 'Cambio de aula sin aviso',
         descripcion: 'En el periodo anterior el aula del laboratorio cambió dos veces sin que se avisara por el campus virtual.',
         revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(2890), directorId: 2 }
+      },
+      {
+        id: 7, canalId: 2, autorId: 4, estado: 'OBSERVADA', fechaCreacion: haceHoras(30), categoria: 'Horarios y aulas',
+        titulo: 'Cruce de horarios entre teoría y laboratorio',
+        descripcion: 'El horario del laboratorio se cruza con la clase de teoría y no hay alternativa de horario para los alumnos afectados.',
+        revision: null,
+        observaciones: [{ texto: 'Indica qué horarios se cruzan y cuántos alumnos se ven afectados.', fecha: haceHoras(6), directorId: 2, version: 1 }]
+      },
+      {
+        id: 8, canalId: 2, autorId: 6, estado: 'EN_ATENCION', fechaCreacion: haceHoras(60), categoria: 'Material y contenidos',
+        fechaAtencion: haceHoras(10),
+        titulo: 'Las diapositivas de clase no están en el campus virtual',
+        descripcion: 'Desde la segunda semana no se suben las diapositivas de las clases y varios compañeros no pueden repasar para la práctica.',
+        revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(55), directorId: 2 }
       }
     ],
     confirmaciones: [
       { usuarioId: 4, incidenciaId: 1 }, { usuarioId: 6, incidenciaId: 1 }, { usuarioId: 8, incidenciaId: 1 },
       { usuarioId: 9, incidenciaId: 1 }, { usuarioId: 10, incidenciaId: 1 },
       { usuarioId: 5, incidenciaId: 2 }, { usuarioId: 6, incidenciaId: 2 },
-      { usuarioId: 4, incidenciaId: 3 }
+      { usuarioId: 4, incidenciaId: 3 },
+      { usuarioId: 4, incidenciaId: 8 }, { usuarioId: 10, incidenciaId: 8 }
     ],
     reacciones: [
       { usuarioId: 4, incidenciaId: 1, tipo: 'URGENTE' },
@@ -122,7 +141,8 @@ function semilla() {
     ],
     notificaciones: [
       { id: 1, usuarioId: 4, incidenciaId: 5, mensaje: 'Tu incidencia "Queja general del curso" fue rechazada: Falta información para evaluarla.', leida: false, fecha: haceHoras(95) },
-      { id: 2, usuarioId: 2, incidenciaId: 4, mensaje: 'Nueva incidencia pendiente en INF281 · Bases de Datos', leida: false, fecha: haceHoras(2) }
+      { id: 2, usuarioId: 2, incidenciaId: 4, mensaje: 'Nueva incidencia pendiente en INF281 · Bases de Datos', leida: false, fecha: haceHoras(2) },
+      { id: 3, usuarioId: 4, incidenciaId: 7, mensaje: 'Tu incidencia "Cruce de horarios entre teoría y laboratorio" fue observada: Indica qué horarios se cruzan y cuántos alumnos se ven afectados.', leida: false, fecha: haceHoras(6) }
     ],
     auditoria: [
       { id: 1, accion: 'INCIDENCIA_APROBADA', actor: 'director', incidenciaId: 1, detalle: 'Publicada en INF263 · Algoritmia', fecha: haceHoras(45) },
@@ -137,6 +157,7 @@ function cargar() {
     if (raw) return JSON.parse(raw)
   } catch { /* datos corruptos: se regeneran */ }
   const db = semilla()
+  completarSemilla(db)
   guardar(db)
   return db
 }
@@ -179,7 +200,57 @@ function requerir(u, ...roles) {
 const estaSuscrito = (db, u, canalId) => db.suscripciones.some(s => s.usuarioId === u.id && s.canalId === canalId)
 const canalDe = (db, id) => db.canales.find(c => c.id === id) ?? error(404, 'Canal no encontrado')
 const incidenciaDe = (db, id) => db.incidencias.find(i => i.id === id) ?? error(404, 'Incidencia no encontrada')
-const esVisible = estado => estado === 'PUBLICADA' || estado === 'RESUELTA'
+const esVisible = estado => estado === 'PUBLICADA' || estado === 'EN_ATENCION' || estado === 'RESUELTA'
+
+// Estado en que queda la incidencia tras cada evento del historial (EDITADA no cambia el estado)
+const ESTADO_DE_EVENTO = { CREADA: 'PENDIENTE', OBSERVADA: 'OBSERVADA', REENVIADA: 'PENDIENTE', APROBADA: 'PUBLICADA', RECHAZADA: 'RECHAZADA', EN_ATENCION: 'EN_ATENCION', RESUELTA: 'RESUELTA' }
+
+function registrar(i, tipo, actorId, detalle = null) {
+  i.historial.push({ tipo, fecha: ahora(), actorId, detalle })
+}
+
+function armarHistorial(i) {
+  const ev = (tipo, fecha, actorId, detalle = null) => ({ tipo, fecha, actorId, detalle })
+  const lista = [ev('CREADA', i.fechaCreacion, i.autorId)]
+  for (const o of i.observaciones) lista.push(ev('OBSERVADA', o.fecha, o.directorId, o.texto))
+  if (i.revision) lista.push(ev(i.revision.decision, i.revision.fecha, i.revision.directorId, i.revision.comentario))
+  if (i.fechaAtencion) lista.push(ev('EN_ATENCION', i.fechaAtencion, 2))
+  if (i.fechaResolucion) lista.push(ev('RESUELTA', i.fechaResolucion, 2, i.solucion))
+  return lista.sort((a, b) => a.fecha.localeCompare(b.fecha))
+}
+
+// Cada incidencia conserva sus versiones, observaciones e historial de cambios (RF-12.2, RF-13.3)
+function completarSemilla(db) {
+  for (const i of db.incidencias) {
+    i.versiones ??= [{ n: 1, titulo: i.titulo, descripcion: i.descripcion, categoria: i.categoria, fecha: i.fechaCreacion }]
+    i.observaciones ??= []
+    i.historial ??= armarHistorial(i)
+  }
+}
+
+function validarContenido(body) {
+  const titulo = (body.titulo ?? '').trim()
+  const descripcion = (body.descripcion ?? '').trim()
+  if (!CATEGORIAS.includes(body.categoria)) error(400, 'Elige una categoría para la incidencia')
+  if (titulo.length < 5 || titulo.length > 100) error(400, 'El título debe tener entre 5 y 100 caracteres')
+  if (descripcion.length < 20 || descripcion.length > 1000) error(400, 'La descripción debe tener entre 20 y 1000 caracteres')
+  return { titulo, descripcion, categoria: body.categoria }
+}
+
+function historialPara(db, u, i) {
+  const conActor = u.rol === 'DIRECTOR' || u.rol === 'ADMIN'
+  if (!conActor && i.autorId !== u.id) return []
+  const nombre = id => db.usuarios.find(x => x.id === id)?.usuario ?? null
+  return i.historial
+    .filter(e => conActor || ESTADO_DE_EVENTO[e.tipo])
+    .map(e => ({
+      tipo: e.tipo,
+      estado: ESTADO_DE_EVENTO[e.tipo] ?? null,
+      fecha: e.fecha,
+      detalle: conActor ? e.detalle : null,
+      responsable: conActor ? nombre(e.actorId) : null
+    }))
+}
 
 function auditar(db, accion, actor, incidenciaId, detalle) {
   db.auditoria.push({ id: siguienteId(db.auditoria), accion, actor, incidenciaId, detalle, fecha: ahora() })
@@ -238,7 +309,7 @@ function serRevision(db, r) {
 function serIncidencia(db, u, i, { detalle = false } = {}) {
   const canal = db.canales.find(c => c.id === i.canalId)
   const esMia = i.autorId === u.id
-  const publicada = i.estado === 'PUBLICADA'
+  const publicada = i.estado === 'PUBLICADA' || i.estado === 'EN_ATENCION'
   const suscrito = estaSuscrito(db, u, canal.id)
   const estudiante = u.rol === 'ESTUDIANTE'
   const base = {
@@ -259,9 +330,19 @@ function serIncidencia(db, u, i, { detalle = false } = {}) {
     puedeConfirmar: publicada && estudiante && suscrito && !esMia,
     puedeReaccionar: publicada && estudiante && suscrito,
     puedeComentar: publicada && estudiante && suscrito,
-    revision: esMia || u.rol === 'DIRECTOR' ? serRevision(db, i.revision) : null
+    revision: esMia || u.rol === 'DIRECTOR' ? serRevision(db, i.revision) : null,
+    observacion: (esMia || u.rol === 'DIRECTOR') && i.estado === 'OBSERVADA' ? i.observaciones.at(-1)?.texto ?? null : null,
+    solucion: esVisible(i.estado) || esMia || u.rol === 'DIRECTOR' ? i.solucion ?? null : null,
+    fechaResolucion: i.fechaResolucion ?? null,
+    puedeEditar: esMia && (i.estado === 'PENDIENTE' || i.estado === 'OBSERVADA'),
+    puedeReenviar: esMia && i.estado === 'OBSERVADA' && i.versiones.length > (i.observaciones.at(-1)?.version ?? 0)
   }
   if (detalle) {
+    if (esMia || u.rol === 'DIRECTOR') {
+      base.observaciones = i.observaciones.map(o => ({ texto: o.texto, fecha: o.fecha, version: o.version }))
+    }
+    if (u.rol === 'DIRECTOR') base.versiones = i.versiones
+    base.historial = historialPara(db, u, i)
     base.comentarios = db.comentarios
       .filter(c => c.incidenciaId === i.id)
       .sort((a, b) => a.fecha.localeCompare(b.fecha))
@@ -348,7 +429,7 @@ const rutas = [
     requerir(u, 'ESTUDIANTE', 'PROFESOR')
     const misCanales = db.suscripciones.filter(s => s.usuarioId === u.id).map(s => s.canalId)
     const lista = db.incidencias
-      .filter(i => i.estado === 'PUBLICADA' && misCanales.includes(i.canalId) && confirmacionesDe(db, i.id) > 0)
+      .filter(i => (i.estado === 'PUBLICADA' || i.estado === 'EN_ATENCION') && misCanales.includes(i.canalId) && confirmacionesDe(db, i.id) > 0)
       .sort(porPrioridad(db))
       .slice(0, 5)
     return { data: lista.map(i => serIncidencia(db, u, i)) }
@@ -359,12 +440,10 @@ const rutas = [
     requerir(u, 'ESTUDIANTE')
     const canal = canalDe(db, Number(body.canalId))
     if (!canal.activo) error(409, 'Este canal está desactivado y ya no admite incidencias')
-    const titulo = (body.titulo ?? '').trim()
-    const descripcion = (body.descripcion ?? '').trim()
-    if (!CATEGORIAS.includes(body.categoria)) error(400, 'Elige una categoría para la incidencia')
-    if (titulo.length < 5 || titulo.length > 100) error(400, 'El título debe tener entre 5 y 100 caracteres')
-    if (descripcion.length < 20 || descripcion.length > 1000) error(400, 'La descripción debe tener entre 20 y 1000 caracteres')
-    const inc = { id: siguienteId(db.incidencias), canalId: canal.id, autorId: u.id, categoria: body.categoria, titulo, descripcion, estado: 'PENDIENTE', fechaCreacion: ahora(), revision: null }
+    const { titulo, descripcion, categoria } = validarContenido(body)
+    const inc = { id: siguienteId(db.incidencias), canalId: canal.id, autorId: u.id, categoria, titulo, descripcion, estado: 'PENDIENTE', fechaCreacion: ahora(), revision: null, observaciones: [] }
+    inc.versiones = [{ n: 1, titulo, descripcion, categoria, fecha: inc.fechaCreacion }]
+    inc.historial = armarHistorial(inc)
     db.incidencias.push(inc)
     if (!estaSuscrito(db, u, canal.id)) db.suscripciones.push({ usuarioId: u.id, canalId: canal.id })
     notificar(db, db.usuarios.filter(x => x.rol === 'DIRECTOR').map(x => x.id), inc.id, `Nueva incidencia pendiente en ${canal.nombre}`)
@@ -417,6 +496,32 @@ const rutas = [
     db.comentarios.push(c)
     return { status: 201, data: { id: c.id, texto: p.texto, fecha: c.fecha } }
   }],
+  ['put', /^\/incidencias\/(\d+)$/, ({ db, u, args, body }) => {
+    requerir(u, 'ESTUDIANTE')
+    const i = incidenciaDe(db, args[0])
+    if (i.autorId !== u.id) error(403, 'Solo el autor puede editar su incidencia')
+    if (i.estado !== 'PENDIENTE' && i.estado !== 'OBSERVADA') error(409, 'Solo se puede editar una incidencia pendiente u observada')
+    const nuevo = validarContenido(body)
+    if (nuevo.titulo === i.titulo && nuevo.descripcion === i.descripcion && nuevo.categoria === i.categoria) error(400, 'No hay cambios que guardar')
+    Object.assign(i, nuevo)
+    i.versiones.push({ n: i.versiones.length + 1, ...nuevo, fecha: ahora() })
+    registrar(i, 'EDITADA', u.id, `Versión ${i.versiones.length}`)
+    auditar(db, 'INCIDENCIA_EDITADA', u.usuario, i.id, `Versión ${i.versiones.length}`)
+    return { data: serIncidencia(db, u, i, { detalle: true }) }
+  }],
+  ['post', /^\/incidencias\/(\d+)\/reenviar$/, ({ db, u, args }) => {
+    requerir(u, 'ESTUDIANTE')
+    const i = incidenciaDe(db, args[0])
+    if (i.autorId !== u.id) error(403, 'Solo el autor puede reenviar su incidencia')
+    if (i.estado !== 'OBSERVADA') error(409, 'Solo se puede reenviar una incidencia observada')
+    if (!serIncidencia(db, u, i).puedeReenviar) error(409, 'Edita la incidencia atendiendo las observaciones antes de reenviarla')
+    const canal = canalDe(db, i.canalId)
+    i.estado = 'PENDIENTE'
+    registrar(i, 'REENVIADA', u.id)
+    notificar(db, db.usuarios.filter(x => x.rol === 'DIRECTOR').map(x => x.id), i.id, `Incidencia reenviada tras las observaciones en ${canal.nombre}: "${i.titulo}"`)
+    auditar(db, 'INCIDENCIA_REENVIADA', u.usuario, i.id, `Versión ${i.versiones.length}`)
+    return { data: serIncidencia(db, u, i, { detalle: true }) }
+  }],
   ['get', /^\/mis-incidencias$/, ({ db, u }) => {
     requerir(u, 'ESTUDIANTE')
     return { data: db.incidencias.filter(i => i.autorId === u.id).sort(porRecientes).map(i => serIncidencia(db, u, i)) }
@@ -458,6 +563,7 @@ const rutas = [
     const canal = canalDe(db, i.canalId)
     i.estado = 'PUBLICADA'
     i.revision = { decision: 'APROBADA', motivoId: null, comentario: null, fecha: ahora(), directorId: u.id }
+    registrar(i, 'APROBADA', u.id)
     notificar(db, [i.autorId], i.id, `Tu incidencia "${i.titulo}" fue aprobada y publicada en ${canal.nombre}`)
     notificar(db, suscritosDe(db, canal.id).filter(id => id !== i.autorId), i.id, `Nueva incidencia publicada en ${canal.nombre}: "${i.titulo}"`)
     auditar(db, 'INCIDENCIA_APROBADA', u.usuario, i.id, `Publicada en ${canal.nombre}`)
@@ -473,18 +579,51 @@ const rutas = [
     i.estado = 'RECHAZADA'
     i.revision = { decision: 'RECHAZADA', motivoId: motivo?.id ?? null, comentario, fecha: ahora(), directorId: u.id }
     const razon = [motivo?.descripcion, comentario].filter(Boolean).join(' — ')
+    registrar(i, 'RECHAZADA', u.id, razon)
     notificar(db, [i.autorId], i.id, `Tu incidencia "${i.titulo}" fue rechazada: ${razon}`)
     auditar(db, 'INCIDENCIA_RECHAZADA', u.usuario, i.id, razon)
     return { data: serIncidencia(db, u, i) }
   }],
-  ['post', /^\/director\/incidencias\/(\d+)\/resolver$/, ({ db, u, args }) => {
+  ['post', /^\/director\/incidencias\/(\d+)\/observar$/, ({ db, u, args, body }) => {
     requerir(u, 'DIRECTOR')
     const i = incidenciaDe(db, args[0])
-    if (i.estado !== 'PUBLICADA') error(409, 'Solo se pueden resolver incidencias publicadas')
+    if (i.estado !== 'PENDIENTE') error(409, 'Solo se pueden observar incidencias pendientes')
+    const texto = (body.observacion ?? '').trim()
+    if (texto.length < 10) error(400, 'Indica al estudiante qué debe cambiar o editar (mínimo 10 caracteres)')
+    if (texto.length > 500) error(400, 'La observación no puede superar los 500 caracteres')
+    i.observaciones.push({ texto, fecha: ahora(), directorId: u.id, version: i.versiones.length })
+    i.estado = 'OBSERVADA'
+    registrar(i, 'OBSERVADA', u.id, texto)
+    notificar(db, [i.autorId], i.id, `Tu incidencia "${i.titulo}" fue observada: ${texto}`)
+    auditar(db, 'INCIDENCIA_OBSERVADA', u.usuario, i.id, texto)
+    return { data: serIncidencia(db, u, i) }
+  }],
+  ['post', /^\/director\/incidencias\/(\d+)\/atender$/, ({ db, u, args }) => {
+    requerir(u, 'DIRECTOR')
+    const i = incidenciaDe(db, args[0])
+    if (i.estado !== 'PUBLICADA') error(409, 'Solo se pueden pasar a atención incidencias aprobadas')
+    const canal = canalDe(db, i.canalId)
+    i.estado = 'EN_ATENCION'
+    i.fechaAtencion = ahora()
+    registrar(i, 'EN_ATENCION', u.id)
+    notificar(db, [i.autorId, ...suscritosDe(db, canal.id)], i.id, `La incidencia "${i.titulo}" de ${canal.nombre} está en atención`)
+    auditar(db, 'INCIDENCIA_EN_ATENCION', u.usuario, i.id, `Canal ${canal.nombre}`)
+    return { data: serIncidencia(db, u, i) }
+  }],
+  ['post', /^\/director\/incidencias\/(\d+)\/resolver$/, ({ db, u, args, body }) => {
+    requerir(u, 'DIRECTOR')
+    const i = incidenciaDe(db, args[0])
+    if (i.estado !== 'PUBLICADA' && i.estado !== 'EN_ATENCION') error(409, 'Solo se pueden resolver incidencias aprobadas')
+    const solucion = (body.solucion ?? '').trim()
+    if (solucion.length < 10) error(400, 'Describe la solución aplicada (mínimo 10 caracteres)')
+    if (solucion.length > 1000) error(400, 'La solución no puede superar los 1000 caracteres')
     const canal = canalDe(db, i.canalId)
     i.estado = 'RESUELTA'
+    i.solucion = solucion
+    i.fechaResolucion = ahora()
+    registrar(i, 'RESUELTA', u.id, solucion)
     notificar(db, [i.autorId, ...suscritosDe(db, canal.id)], i.id, `La incidencia "${i.titulo}" de ${canal.nombre} fue marcada como resuelta`)
-    auditar(db, 'INCIDENCIA_RESUELTA', u.usuario, i.id, `Canal ${canal.nombre}`)
+    auditar(db, 'INCIDENCIA_RESUELTA', u.usuario, i.id, `Canal ${canal.nombre}: ${solucion}`)
     return { data: serIncidencia(db, u, i) }
   }],
 

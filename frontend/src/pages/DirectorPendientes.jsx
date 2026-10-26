@@ -6,26 +6,42 @@ import { Alerta, CategoriaChip, Cargando, PrioridadBadge, Titulo, Vacio } from '
 import { fechaHora, hace } from '../utils/formato'
 
 export default function DirectorPendientes() {
+  const [estado, setEstado] = useState('PENDIENTE')
   const [lista, setLista] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    api.get('/director/incidencias', { params: { estado: 'PENDIENTE' } })
+    api.get('/director/incidencias', { params: { estado } })
       .then(r => setLista(r.data))
       .catch(e => setError(mensajeError(e)))
-  }, [])
+  }, [estado])
 
-  if (error) return <Alerta>{error}</Alerta>
-  if (!lista) return <Cargando />
+  const cambiarEstado = valor => {
+    setLista(null)
+    setError('')
+    setEstado(valor)
+  }
+
+  const pestaña = valor =>
+    `px-3 py-1.5 text-sm rounded-full ${estado === valor ? 'bg-tinta text-white' : 'text-suave hover:bg-linea'}`
 
   return (
     <div>
-      <Titulo subtitulo="Revisa cada incidencia antes de que se publique. Si la rechazas, el estudiante recibirá el motivo.">
-        Pendientes de revisión <span className="text-suave/70 font-normal">({lista.length})</span>
+      <Titulo subtitulo="Revisa cada incidencia antes de que se publique: apruébala, pide cambios al estudiante o recházala con un motivo.">
+        Pendientes de revisión{lista && estado === 'PENDIENTE' && <span className="text-suave/70 font-normal"> ({lista.length})</span>}
       </Titulo>
 
-      {lista.length === 0 ? (
-        <Vacio>No hay incidencias pendientes. 🎉</Vacio>
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => cambiarEstado('PENDIENTE')} className={pestaña('PENDIENTE')}>Por revisar</button>
+        <button onClick={() => cambiarEstado('OBSERVADA')} className={pestaña('OBSERVADA')}>Observadas</button>
+      </div>
+
+      {error ? (
+        <Alerta>{error}</Alerta>
+      ) : !lista ? (
+        <Cargando />
+      ) : lista.length === 0 ? (
+        <Vacio>{estado === 'PENDIENTE' ? 'No hay incidencias pendientes. 🎉' : 'No hay incidencias observadas esperando respuesta del estudiante.'}</Vacio>
       ) : (
         <div className="space-y-4">
           {lista.map(i => (
@@ -44,7 +60,11 @@ export default function DirectorPendientes() {
                 <CategoriaChip categoria={i.categoria} />
               </div>
               <p className="text-sm text-tinta whitespace-pre-line mb-4">{i.descripcion}</p>
-              <AccionesDirector incidencia={i} onHecho={() => setLista(l => l.filter(x => x.id !== i.id))} />
+              {estado === 'OBSERVADA' ? (
+                <Alerta tipo="info">Esperando que el estudiante edite y reenvíe. Observación: {i.observacion}</Alerta>
+              ) : (
+                <AccionesDirector incidencia={i} onHecho={() => setLista(l => l.filter(x => x.id !== i.id))} />
+              )}
             </div>
           ))}
         </div>

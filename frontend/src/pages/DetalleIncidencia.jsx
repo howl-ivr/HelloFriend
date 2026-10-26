@@ -6,7 +6,8 @@ import BotonConfirmar from '../components/BotonConfirmar'
 import Reacciones from '../components/Reacciones'
 import Comentarios from '../components/Comentarios'
 import AccionesDirector from '../components/AccionesDirector'
-import { Alerta, CategoriaChip, Cargando, EstadoBadge, PrioridadBadge } from '../components/ui'
+import Historial, { Versiones } from '../components/Historial'
+import { Alerta, CategoriaChip, Cargando, EstadoBadge, PrioridadBadge, claseBoton } from '../components/ui'
 import { fechaHora, hace } from '../utils/formato'
 
 function Revision({ revision }) {
@@ -20,6 +21,37 @@ function Revision({ revision }) {
       {revision.motivo && <p className="text-sm text-tinta mt-1"><span className="font-medium">Motivo:</span> {revision.motivo}</p>}
       {revision.comentario && <p className="text-sm text-tinta mt-1"><span className="font-medium">Comentario:</span> {revision.comentario}</p>}
       <p className="text-xs text-suave mt-2">{fechaHora(revision.fecha)}</p>
+    </div>
+  )
+}
+
+function Observaciones({ inc }) {
+  if (!inc.observaciones?.length) return null
+  const vigente = inc.estado === 'OBSERVADA'
+  return (
+    <div className={`rounded-2xl border p-4 mb-5 ${vigente ? 'bg-orange-50 border-orange-200' : 'bg-fondo border-linea'}`}>
+      <p className={`text-sm font-semibold ${vigente ? 'text-orange-800' : 'text-tinta'}`}>
+        {vigente ? 'La dirección pidió cambios' : 'Observaciones recibidas'}
+      </p>
+      <ul className="mt-2 space-y-2">
+        {inc.observaciones.map(o => (
+          <li key={o.fecha} className="text-sm text-tinta">
+            {o.texto}
+            <span className="block text-xs text-suave">Versión {o.version} · {fechaHora(o.fecha)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function Solucion({ inc }) {
+  if (!inc.solucion) return null
+  return (
+    <div className="rounded-2xl border border-green-200 bg-green-50 p-4 mb-5">
+      <p className="text-sm font-semibold text-green-800">Solución aplicada</p>
+      <p className="text-sm text-tinta mt-1 whitespace-pre-line">{inc.solucion}</p>
+      {inc.fechaResolucion && <p className="text-xs text-suave mt-2">{fechaHora(inc.fechaResolucion)}</p>}
     </div>
   )
 }
@@ -43,9 +75,10 @@ export default function DetalleIncidencia() {
   if (error) return <Alerta>{error}</Alerta>
   if (!inc) return <Cargando />
 
-  const visible = inc.estado === 'PUBLICADA' || inc.estado === 'RESUELTA'
+  const visible = inc.estado === 'PUBLICADA' || inc.estado === 'EN_ATENCION' || inc.estado === 'RESUELTA'
+  const enRevision = inc.estado === 'PENDIENTE' || inc.estado === 'OBSERVADA'
   const volver = rol === 'DIRECTOR'
-    ? { to: inc.estado === 'PENDIENTE' ? '/director/pendientes' : '/director/publicadas', texto: '← Volver a la bandeja' }
+    ? { to: enRevision ? '/director/pendientes' : '/director/publicadas', texto: '← Volver a la bandeja' }
     : inc.esMia && !visible
       ? { to: '/mis-incidencias', texto: '← Mis incidencias' }
       : { to: `/inicio?canal=${inc.canal.id}`, texto: `← ${inc.canal.nombre}` }
@@ -72,10 +105,27 @@ export default function DetalleIncidencia() {
         </div>
         <p className="text-tinta whitespace-pre-line mb-5">{inc.descripcion}</p>
 
+        <Solucion inc={inc} />
         {(inc.esMia || rol === 'DIRECTOR') && <Revision revision={inc.revision} />}
+        <Observaciones inc={inc} />
 
         {inc.esMia && inc.estado === 'PENDIENTE' && (
-          <Alerta tipo="info">Tu incidencia está en revisión. Solo tú y la dirección pueden verla hasta que sea aprobada.</Alerta>
+          <div className="mb-4">
+            <Alerta tipo="info">Tu incidencia está en revisión. Solo tú y la dirección pueden verla hasta que sea aprobada. Mientras tanto puedes editarla.</Alerta>
+          </div>
+        )}
+        {rol === 'DIRECTOR' && inc.estado === 'OBSERVADA' && (
+          <div className="mb-4">
+            <Alerta tipo="info">Esperando que el estudiante edite y reenvíe la incidencia.</Alerta>
+          </div>
+        )}
+
+        {inc.puedeEditar && (
+          <div className="mb-2">
+            <Link to={`/incidencias/${inc.id}/editar`} className={claseBoton}>
+              {inc.estado === 'OBSERVADA' ? 'Editar y reenviar' : 'Editar'}
+            </Link>
+          </div>
         )}
 
         {rol === 'DIRECTOR' && (
@@ -85,8 +135,8 @@ export default function DetalleIncidencia() {
         )}
 
         {visible && (
-          <div className="space-y-5">
-            {rol === 'ESTUDIANTE' && inc.estado === 'PUBLICADA' ? (
+          <div className="space-y-5 mt-5">
+            {rol === 'ESTUDIANTE' && inc.estado !== 'RESUELTA' ? (
               <BotonConfirmar incidencia={inc} />
             ) : (
               <p className="text-sm font-semibold text-confirma">✔ {inc.confirmaciones} confirmaciones</p>
@@ -101,6 +151,9 @@ export default function DetalleIncidencia() {
           <Comentarios incidencia={inc} />
         </div>
       )}
+
+      <Historial eventos={inc.historial} titulo={rol === 'DIRECTOR' ? 'Historial del reporte' : 'Historial de estados'} />
+      {rol === 'DIRECTOR' && <Versiones versiones={inc.versiones} />}
     </div>
   )
 }

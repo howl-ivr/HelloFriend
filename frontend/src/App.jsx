@@ -9,6 +9,7 @@ import Canales from './pages/Canales'
 import Canal from './pages/Canal'
 import DetalleIncidencia from './pages/DetalleIncidencia'
 import NuevaIncidencia from './pages/NuevaIncidencia'
+import EditarIncidencia from './pages/EditarIncidencia'
 import MisIncidencias from './pages/MisIncidencias'
 import Notificaciones from './pages/Notificaciones'
 import DirectorPendientes from './pages/DirectorPendientes'
@@ -52,6 +53,7 @@ export default function App() {
               <Route path="/canales" element={<P roles={['ESTUDIANTE', 'PROFESOR']}><Canales /></P>} />
               <Route path="/canales/:id" element={<P roles={['ESTUDIANTE', 'PROFESOR']}><Canal /></P>} />
               <Route path="/incidencias/nueva" element={<P roles={['ESTUDIANTE']}><NuevaIncidencia /></P>} />
+              <Route path="/incidencias/:id/editar" element={<P roles={['ESTUDIANTE']}><EditarIncidencia /></P>} />
               <Route path="/incidencias/:id" element={<P roles={['ESTUDIANTE', 'PROFESOR', 'DIRECTOR']}><DetalleIncidencia /></P>} />
               <Route path="/mis-incidencias" element={<P roles={['ESTUDIANTE']}><MisIncidencias /></P>} />
               <Route path="/notificaciones" element={<P roles={['ESTUDIANTE', 'PROFESOR', 'DIRECTOR']}><Notificaciones /></P>} />

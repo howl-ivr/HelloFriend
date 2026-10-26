@@ -24,7 +24,7 @@ export default function BotonConfirmar({ incidencia, compacto = false }) {
 
   const motivo = incidencia.esMia
     ? 'No puedes confirmar tu propia incidencia'
-    : incidencia.estado !== 'PUBLICADA'
+    : incidencia.estado === 'RESUELTA'
       ? 'Esta incidencia ya no recibe confirmaciones'
       : 'Solo estudiantes suscritos al canal pueden confirmar'
 

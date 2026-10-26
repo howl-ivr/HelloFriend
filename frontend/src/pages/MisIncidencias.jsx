@@ -48,7 +48,12 @@ export default function MisIncidencias() {
                 </p>
               )}
               {i.estado === 'PENDIENTE' && <p className="text-sm text-amber-700 mt-2">En revisión por la dirección de carrera</p>}
-              {(i.estado === 'PUBLICADA' || i.estado === 'RESUELTA') && (
+              {i.estado === 'OBSERVADA' && (
+                <p className="text-sm text-orange-700 mt-2">
+                  La dirección pidió cambios{i.observacion ? `: ${i.observacion}` : ''}. Edita y reenvía tu reporte.
+                </p>
+              )}
+              {(i.estado === 'PUBLICADA' || i.estado === 'EN_ATENCION' || i.estado === 'RESUELTA') && (
                 <p className="text-sm text-confirma mt-2">✔ {i.confirmaciones} confirmaciones · 💬 {i.totalComentarios}</p>
               )}
             </Link>
