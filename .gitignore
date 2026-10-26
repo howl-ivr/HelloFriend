@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+*.iml
+backend/target/
+backend/src/main/resources/static/
+.env.local
