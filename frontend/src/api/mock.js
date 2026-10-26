@@ -558,6 +558,38 @@ const rutas = [
     lista.sort(estado === 'PENDIENTE' ? (a, b) => a.fechaCreacion.localeCompare(b.fechaCreacion) : porPrioridad(db))
     return { data: lista.map(i => serIncidencia(db, u, i)) }
   }],
+  ['get', /^\/director\/estadisticas$/, ({ db, u, params }) => {
+    requerir(u, 'DIRECTOR')
+    if (params.desde && params.hasta && params.desde > params.hasta) error(400, 'La fecha inicial no puede ser posterior a la final')
+    const lista = db.incidencias
+      .filter(i => !params.desde || i.fechaCreacion.slice(0, 10) >= params.desde)
+      .filter(i => !params.hasta || i.fechaCreacion.slice(0, 10) <= params.hasta)
+      .filter(i => !params.periodo || canalDe(db, i.canalId).periodo === params.periodo)
+    const contar = (clave, etiquetas) => {
+      const mapa = new Map(etiquetas.map(e => [e, 0]))
+      lista.forEach(i => { const k = clave(i); mapa.set(k, (mapa.get(k) ?? 0) + 1) })
+      return [...mapa].map(([nombre, total]) => ({ nombre, total }))
+    }
+    const horas = lista
+      .filter(i => i.estado === 'RESUELTA' && i.fechaResolucion && i.revision?.fecha)
+      .map(i => (new Date(i.fechaResolucion) - new Date(i.revision.fecha)) / 3600000)
+    return {
+      data: {
+        total: lista.length,
+        porCurso: contar(i => { const c = db.cursos.find(x => x.id === canalDe(db, i.canalId).cursoId); return `${c.codigo} · ${c.nombre}` }, [])
+          .sort((a, b) => b.total - a.total || a.nombre.localeCompare(b.nombre)),
+        porCategoria: contar(i => i.categoria, CATEGORIAS).sort((a, b) => b.total - a.total),
+        porEstado: contar(i => i.estado, ['PENDIENTE', 'OBSERVADA', 'PUBLICADA', 'EN_ATENCION', 'RESUELTA', 'RECHAZADA']).map(x => ({ estado: x.nombre, total: x.total })),
+        resueltas: horas.length,
+        tiempoPromedioHoras: horas.length ? horas.reduce((s, h) => s + h, 0) / horas.length : null,
+        masConfirmadas: lista
+          .filter(i => esVisible(i.estado) && confirmacionesDe(db, i.id) > 0)
+          .sort(porPrioridad(db))
+          .slice(0, 5)
+          .map(i => ({ id: i.id, titulo: i.titulo, estado: i.estado, canal: canalDe(db, i.canalId).nombre, confirmaciones: confirmacionesDe(db, i.id), prioridad: prioridadDe(confirmacionesDe(db, i.id)) }))
+      }
+    }
+  }],
   ['post', /^\/director\/incidencias\/(\d+)\/aprobar$/, ({ db, u, args }) => {
     requerir(u, 'DIRECTOR')
     const i = incidenciaDe(db, args[0])

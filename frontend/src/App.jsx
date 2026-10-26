@@ -14,6 +14,7 @@ import MisIncidencias from './pages/MisIncidencias'
 import Notificaciones from './pages/Notificaciones'
 import DirectorPendientes from './pages/DirectorPendientes'
 import DirectorPublicadas from './pages/DirectorPublicadas'
+import DirectorEstadisticas from './pages/DirectorEstadisticas'
 import AdminCuentas from './pages/AdminCuentas'
 import AdminCanales from './pages/AdminCanales'
 import AdminAuditoria from './pages/AdminAuditoria'
@@ -61,6 +62,7 @@ export default function App() {
 
               <Route path="/director/pendientes" element={<P roles={['DIRECTOR']}><DirectorPendientes /></P>} />
               <Route path="/director/publicadas" element={<P roles={['DIRECTOR']}><DirectorPublicadas /></P>} />
+              <Route path="/director/estadisticas" element={<P roles={['DIRECTOR']}><DirectorEstadisticas /></P>} />
 
               <Route path="/admin/cuentas" element={<P roles={['ADMIN']} ancho><AdminCuentas /></P>} />
               <Route path="/admin/canales" element={<P roles={['ADMIN']} ancho><AdminCanales /></P>} />

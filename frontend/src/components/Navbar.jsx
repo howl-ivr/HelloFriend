@@ -13,7 +13,8 @@ const ENLACES = {
   PROFESOR: [{ to: '/inicio', texto: 'Inicio' }],
   DIRECTOR: [
     { to: '/director/pendientes', texto: 'Pendientes' },
-    { to: '/director/publicadas', texto: 'Publicadas' }
+    { to: '/director/publicadas', texto: 'Publicadas' },
+    { to: '/director/estadisticas', texto: 'Estadísticas' }
   ],
   ADMIN: [
     { to: '/admin/cuentas', texto: 'Usuarios' },
