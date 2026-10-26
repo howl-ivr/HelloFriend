@@ -22,6 +22,7 @@ español: responde y documenta en español; identificadores sin tildes ni ñ.
 
 ## Antes de dar algo por terminado
 
-- En `backend/`: `.\mvnw.cmd verify` (usa `spotless:apply` si falla por formato).
+- En `backend/`: `.\mvnw.cmd verify` (usa `spotless:apply` si falla por formato). Qué pruebas escribir:
+  [`docs/guias/pruebas.md`](docs/guias/pruebas.md).
 - Si agregaste endpoints, actualiza la tabla de `backend/README.md`; si tomaste una decisión que afecta a otros,
   agrega una entrada en `docs/decisiones/`.
