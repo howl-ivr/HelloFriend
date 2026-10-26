@@ -82,8 +82,8 @@ function TuIdentidad() {
     <div className="rounded-2xl p-4 bg-tinta text-white">
       <h2 className="font-bold">Tu identidad está protegida</h2>
       <ul className="mt-2 space-y-1.5 text-sm text-white/80">
-        <li>Nadie ve quién publica, ni siquiera la dirección.</li>
-        <li>Tu correo solo sirve para validar tu cuenta.</li>
+        <li>Tus compañeros y los profesores nunca ven quién publica ni quién confirma.</li>
+        <li>Solo la dirección de carrera y la administración conocen al autor de un reporte.</li>
         <li>Las respuestas son predefinidas para evitar ataques personales.</li>
       </ul>
     </div>

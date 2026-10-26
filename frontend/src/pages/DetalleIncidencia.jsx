@@ -7,7 +7,7 @@ import Reacciones from '../components/Reacciones'
 import Comentarios from '../components/Comentarios'
 import AccionesDirector from '../components/AccionesDirector'
 import Historial, { Versiones } from '../components/Historial'
-import { Alerta, CategoriaChip, Cargando, EstadoBadge, PrioridadBadge, claseBoton } from '../components/ui'
+import { Alerta, Autor, CategoriaChip, Cargando, EstadoBadge, PrioridadBadge, claseBoton } from '../components/ui'
 import { fechaHora, hace } from '../utils/formato'
 
 function Revision({ revision }) {
@@ -91,7 +91,7 @@ export default function DetalleIncidencia() {
         <div className="flex items-center gap-2 text-xs text-suave mb-3 flex-wrap">
           <span className="font-semibold text-tinta">{inc.canal.nombre}</span>
           <span>·</span>
-          <span>Alumno anónimo</span>
+          <Autor incidencia={inc} />
           <span>·</span>
           <span title={fechaHora(inc.fechaCreacion)}>{hace(inc.fechaCreacion)}</span>
           {inc.esMia && <span className="text-confirma">(tu reporte)</span>}

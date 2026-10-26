@@ -38,6 +38,16 @@ export function CategoriaChip({ categoria }) {
   return <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap bg-fondo text-suave border border-linea">{categoria}</span>
 }
 
+// Autor de un reporte: solo llega en la respuesta para el director y el administrador
+export function Autor({ incidencia }) {
+  if (!incidencia.autor) return <span>Alumno anónimo{incidencia.esMia && ' (tú)'}</span>
+  return (
+    <span title="Solo lo ven la dirección de carrera y la administración">
+      Autor: <span className="font-semibold text-tinta">{incidencia.autor.usuario}</span>
+    </span>
+  )
+}
+
 export function Titulo({ children, subtitulo, accion }) {
   return (
     <div className="flex items-start justify-between gap-4 mb-5">

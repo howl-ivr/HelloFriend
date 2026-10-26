@@ -146,7 +146,7 @@ function semilla() {
     ],
     auditoria: [
       { id: 1, accion: 'INCIDENCIA_APROBADA', actor: 'director', incidenciaId: 1, detalle: 'Publicada en INF263 · Algoritmia', fecha: haceHoras(45) },
-      { id: 2, accion: 'INCIDENCIA_REGISTRADA', actor: 'Estudiante (anónimo)', incidenciaId: 4, detalle: 'Canal INF281 · Bases de Datos', fecha: haceHoras(2) }
+      { id: 2, accion: 'INCIDENCIA_REGISTRADA', actor: 'alumno1', incidenciaId: 4, detalle: 'Canal INF281 · Bases de Datos', fecha: haceHoras(2) }
     ]
   }
 }
@@ -221,6 +221,7 @@ function armarHistorial(i) {
 
 // Cada incidencia conserva sus versiones, observaciones e historial de cambios (RF-12.2, RF-13.3)
 function completarSemilla(db) {
+  for (const c of db.confirmaciones) c.fecha ??= haceHoras(12)
   for (const i of db.incidencias) {
     i.versiones ??= [{ n: 1, titulo: i.titulo, descripcion: i.descripcion, categoria: i.categoria, fecha: i.fechaCreacion }]
     i.observaciones ??= []
@@ -272,7 +273,7 @@ function conteoReacciones(db, incidenciaId) {
 
 const confirmacionesDe = (db, id) => db.confirmaciones.filter(c => c.incidenciaId === id).length
 
-// ---------- Serializadores (nunca exponen al autor) ----------
+// ---------- Serializadores (el autor solo lo ven el director y el administrador) ----------
 function serCanal(db, u, c) {
   const curso = db.cursos.find(x => x.id === c.cursoId)
   return {
@@ -320,6 +321,7 @@ function serIncidencia(db, u, i, { detalle = false } = {}) {
     fechaCreacion: i.fechaCreacion,
     canal: { id: canal.id, nombre: canal.nombre, periodo: canal.periodo },
     categoria: i.categoria,
+    autor: u.rol === 'DIRECTOR' || u.rol === 'ADMIN' ? { usuario: db.usuarios.find(x => x.id === i.autorId)?.usuario ?? null } : null,
     confirmaciones: confirmacionesDe(db, i.id),
     prioridad: prioridadDe(confirmacionesDe(db, i.id)),
     confirmadaPorMi: db.confirmaciones.some(c => c.incidenciaId === i.id && c.usuarioId === u.id),
@@ -447,7 +449,7 @@ const rutas = [
     db.incidencias.push(inc)
     if (!estaSuscrito(db, u, canal.id)) db.suscripciones.push({ usuarioId: u.id, canalId: canal.id })
     notificar(db, db.usuarios.filter(x => x.rol === 'DIRECTOR').map(x => x.id), inc.id, `Nueva incidencia pendiente en ${canal.nombre}`)
-    auditar(db, 'INCIDENCIA_REGISTRADA', 'Estudiante (anónimo)', inc.id, `Canal ${canal.nombre}`)
+    auditar(db, 'INCIDENCIA_REGISTRADA', u.usuario, inc.id, `Canal ${canal.nombre}`)
     return { status: 201, data: serIncidencia(db, u, inc) }
   }],
   ['get', /^\/incidencias\/(\d+)$/, ({ db, u, args }) => {
@@ -468,7 +470,7 @@ const rutas = [
     const ya = db.confirmaciones.some(c => c.incidenciaId === i.id && c.usuarioId === u.id)
     db.confirmaciones = ya
       ? db.confirmaciones.filter(c => !(c.incidenciaId === i.id && c.usuarioId === u.id))
-      : [...db.confirmaciones, { usuarioId: u.id, incidenciaId: i.id }]
+      : [...db.confirmaciones, { usuarioId: u.id, incidenciaId: i.id, fecha: ahora() }]
     return { data: { confirmaciones: confirmacionesDe(db, i.id), confirmadaPorMi: !ya } }
   }],
   ['put', /^\/incidencias\/(\d+)\/reaccion$/, ({ db, u, args, body }) => {
@@ -721,6 +723,57 @@ const rutas = [
   ['get', /^\/admin\/auditoria$/, ({ db, u }) => {
     requerir(u, 'ADMIN')
     return { data: [...db.auditoria].sort((a, b) => b.fecha.localeCompare(a.fecha)) }
+  }],
+  ['get', /^\/admin\/reportes$/, ({ db, u, params }) => {
+    requerir(u, 'ADMIN')
+    const q = (params.usuario ?? '').trim().toLowerCase()
+    const nombre = id => db.usuarios.find(x => x.id === id)?.usuario ?? ''
+    const involucrados = i => [
+      nombre(i.autorId),
+      ...i.historial.map(e => nombre(e.actorId)),
+      ...db.confirmaciones.filter(c => c.incidenciaId === i.id).map(c => nombre(c.usuarioId))
+    ]
+    const lista = db.incidencias
+      .filter(i => !params.estado || i.estado === params.estado)
+      .filter(i => !params.cursoId || db.canales.find(c => c.id === i.canalId)?.cursoId === Number(params.cursoId))
+      .filter(i => !params.desde || i.fechaCreacion.slice(0, 10) >= params.desde)
+      .filter(i => !params.hasta || i.fechaCreacion.slice(0, 10) <= params.hasta)
+      .filter(i => !q || involucrados(i).some(n => n.toLowerCase().includes(q)))
+      .sort(porRecientes)
+    return {
+      data: lista.map(i => {
+        const canal = canalDe(db, i.canalId)
+        const n = confirmacionesDe(db, i.id)
+        return {
+          id: i.id, titulo: i.titulo, categoria: i.categoria, estado: i.estado, fechaCreacion: i.fechaCreacion,
+          canal: { id: canal.id, nombre: canal.nombre, periodo: canal.periodo },
+          autor: nombre(i.autorId), confirmaciones: n, prioridad: prioridadDe(n), versiones: i.versiones.length
+        }
+      })
+    }
+  }],
+  ['get', /^\/admin\/reportes\/(\d+)$/, ({ db, u, args }) => {
+    requerir(u, 'ADMIN')
+    const i = incidenciaDe(db, args[0])
+    const canal = canalDe(db, i.canalId)
+    const autor = db.usuarios.find(x => x.id === i.autorId)
+    const nombre = id => db.usuarios.find(x => x.id === id)?.usuario ?? null
+    const n = confirmacionesDe(db, i.id)
+    const eventos = [
+      ...i.historial.map(e => ({ tipo: e.tipo, estado: ESTADO_DE_EVENTO[e.tipo] ?? null, fecha: e.fecha, detalle: e.detalle, responsable: nombre(e.actorId) })),
+      ...db.confirmaciones.filter(c => c.incidenciaId === i.id).map(c => ({ tipo: 'CONFIRMADA', estado: null, fecha: c.fecha, detalle: null, responsable: nombre(c.usuarioId) }))
+    ].sort((a, b) => a.fecha.localeCompare(b.fecha))
+    return {
+      data: {
+        id: i.id, titulo: i.titulo, descripcion: i.descripcion, categoria: i.categoria, estado: i.estado, fechaCreacion: i.fechaCreacion,
+        canal: { id: canal.id, nombre: canal.nombre, periodo: canal.periodo },
+        autor: { usuario: autor?.usuario ?? null, correo: autor?.correo ?? null },
+        confirmaciones: n, prioridad: prioridadDe(n),
+        solucion: i.solucion ?? null,
+        versiones: i.versiones,
+        eventos
+      }
+    }
   }]
 ]
 

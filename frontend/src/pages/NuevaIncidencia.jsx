@@ -66,8 +66,8 @@ export default function NuevaIncidencia() {
       <Titulo>Reportar incidencia</Titulo>
 
       <div className="bg-confirma-suave border border-confirma/30 rounded-2xl p-4 mb-5 text-sm text-confirma">
-        🔒 <span className="font-semibold">Tu identidad no será visible para nadie</span>: ni para otros alumnos, ni para profesores,
-        ni para la dirección. Describe el hecho sin mencionar nombres de personas.
+        🔒 <span className="font-semibold">Tu identidad no será visible para otros alumnos ni para profesores</span>. Solo la dirección
+        de carrera y la administración pueden saber quién reportó. Describe el hecho sin mencionar nombres de personas.
       </div>
 
       <form onSubmit={enviar} className="bg-white border border-linea rounded-2xl p-6 space-y-4">

@@ -17,6 +17,7 @@ import DirectorPublicadas from './pages/DirectorPublicadas'
 import AdminCuentas from './pages/AdminCuentas'
 import AdminCanales from './pages/AdminCanales'
 import AdminAuditoria from './pages/AdminAuditoria'
+import AdminReporte from './pages/AdminReporte'
 
 const INICIO = {
   ESTUDIANTE: '/inicio',
@@ -61,9 +62,10 @@ export default function App() {
               <Route path="/director/pendientes" element={<P roles={['DIRECTOR']}><DirectorPendientes /></P>} />
               <Route path="/director/publicadas" element={<P roles={['DIRECTOR']}><DirectorPublicadas /></P>} />
 
-              <Route path="/admin/cuentas" element={<P roles={['ADMIN']}><AdminCuentas /></P>} />
-              <Route path="/admin/canales" element={<P roles={['ADMIN']}><AdminCanales /></P>} />
-              <Route path="/admin/auditoria" element={<P roles={['ADMIN']}><AdminAuditoria /></P>} />
+              <Route path="/admin/cuentas" element={<P roles={['ADMIN']} ancho><AdminCuentas /></P>} />
+              <Route path="/admin/canales" element={<P roles={['ADMIN']} ancho><AdminCanales /></P>} />
+              <Route path="/admin/auditoria" element={<P roles={['ADMIN']} ancho><AdminAuditoria /></P>} />
+              <Route path="/admin/auditoria/:id" element={<P roles={['ADMIN']}><AdminReporte /></P>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeError } from '../api/client'
 import AccionesDirector from '../components/AccionesDirector'
-import { Alerta, CategoriaChip, Cargando, PrioridadBadge, Titulo, Vacio } from '../components/ui'
+import { Alerta, Autor, CategoriaChip, Cargando, PrioridadBadge, Titulo, Vacio } from '../components/ui'
 import { hace, REACCIONES } from '../utils/formato'
 
 export default function DirectorPublicadas() {
@@ -55,6 +55,8 @@ export default function DirectorPublicadas() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 text-xs text-suave mb-1">
                   <span className="font-semibold text-tinta">{i.canal.nombre}</span>
+                  <span>·</span>
+                  <Autor incidencia={i} />
                   <span>·</span>
                   <span>{hace(i.fechaCreacion)}</span>
                 </div>
