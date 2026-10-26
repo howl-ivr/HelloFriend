@@ -53,7 +53,9 @@ backend/src/test/java/com/hellofriend/usuarios/
 4. **Transversales** (cuando existan los módulos):
    - **Anonimato:** una prueba que falle si una respuesta, notificación o log incluye datos del autor o del profesor.
    - **Permisos:** una prueba parametrizada de cada endpoint contra cada rol.
-   - **Auditoría:** comprueba que la aplicación nunca actualiza ni borra `auditoria_evento`.
+   - **Auditoría:** comprueba que la aplicación nunca actualiza ni borra las tablas de solo adición
+     (`incidencias_version`, `incidencias_historial_estado`) y que la vista `auditoria_historial_incidencia` refleja cada
+     cambio de estado, observación y confirmación.
 
 ## Una prueba de integración nueva
 
@@ -63,7 +65,7 @@ class CanalIT extends PruebaIntegracion {
 	@Test
 	void noPermiteDosCanalesParaElMismoCursoYPeriodo() {
 		// preparar los datos con jdbc.sql(...), luego comprobar la regla
-		rechazaPor("uq_canales_canal_curso_periodo", () -> crearCanal(cursoId, periodoId));
+		rechazaPor("uq_canales_canal_curso_anio_semestre", () -> crearCanal(cursoId, 2026, 2));
 	}
 }
 ```
