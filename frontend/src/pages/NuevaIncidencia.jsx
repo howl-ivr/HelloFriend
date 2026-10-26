@@ -24,7 +24,7 @@ export default function NuevaIncidencia() {
     setError('')
     setEnviando(true)
     try {
-      await api.post('/incidencias', { canalId: Number(canalId), titulo: titulo.trim(), descripcion: descripcion.trim() })
+      await api.post('/incidencias', { canalId: Number(canalElegido), titulo: titulo.trim(), descripcion: descripcion.trim() })
       setEnviada(true)
     } catch (err) {
       setError(mensajeError(err))
@@ -51,11 +51,13 @@ export default function NuevaIncidencia() {
     )
   }
 
-  if (canales.length === 0) {
-    return <Vacio>Aún no hay canales creados.</Vacio>
+  const activos = canales.filter(c => c.activo)
+  if (activos.length === 0) {
+    return <Vacio>Aún no hay canales activos para reportar.</Vacio>
   }
 
-  const valido = canalId && titulo.trim().length >= 5 && descripcion.trim().length >= 20
+  const canalElegido = activos.some(c => String(c.id) === String(canalId)) ? canalId : ''
+  const valido = canalElegido && titulo.trim().length >= 5 && descripcion.trim().length >= 20
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -69,9 +71,9 @@ export default function NuevaIncidencia() {
       <form onSubmit={enviar} className="bg-white border border-linea rounded-2xl p-6 space-y-4">
         <div>
           <label className="text-sm font-medium text-tinta">Curso</label>
-          <select value={canalId} onChange={e => setCanalId(e.target.value)} required className={`${claseInput} mt-1`}>
+          <select value={canalElegido} onChange={e => setCanalId(e.target.value)} required className={`${claseInput} mt-1`}>
             <option value="">Elige el curso...</option>
-            {canales.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+            {activos.map(c => <option key={c.id} value={c.id}>{c.nombre} · {c.periodo}</option>)}
           </select>
           <p className="text-xs text-suave mt-1">Al reportar quedas suscrito al canal para recibir novedades.</p>
         </div>

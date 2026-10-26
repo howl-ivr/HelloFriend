@@ -38,8 +38,8 @@ export default function ExplorarCanales({ onCerrar, onCambio }) {
 
   const f = busqueda.trim().toLowerCase()
   const visibles = (canales ?? [])
-    .filter(c => !f || c.nombre.toLowerCase().includes(f))
-    .sort((a, b) => Number(a.suscrito) - Number(b.suscrito) || a.nombre.localeCompare(b.nombre))
+    .filter(c => (c.activo || c.suscrito) && (!f || c.nombre.toLowerCase().includes(f)))
+    .sort((a, b) => Number(a.suscrito) - Number(b.suscrito) || a.nombre.localeCompare(b.nombre) || b.periodo.localeCompare(a.periodo))
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-start sm:place-items-center bg-tinta/40 p-4 overflow-y-auto" onMouseDown={e => e.target === e.currentTarget && onCerrar()}>
@@ -65,7 +65,7 @@ export default function ExplorarCanales({ onCerrar, onCambio }) {
                 <CanalAvatar canal={c} />
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate">{nombre} <span className="font-normal text-suave">{codigo}</span></p>
-                  <p className="text-xs text-suave">{c.totalSuscritos} suscritos · {c.totalPublicadas} incidencias</p>
+                  <p className="text-xs text-suave">{c.periodo} · {c.totalSuscritos} suscritos · {c.totalPublicadas} incidencias{!c.activo && ' · Desactivado'}</p>
                 </div>
                 <button
                   onClick={() => alternar(c)}

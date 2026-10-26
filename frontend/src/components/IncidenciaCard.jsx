@@ -18,7 +18,7 @@ export default function IncidenciaCard({ incidencia, onElegirCanal }) {
             onClick={() => onElegirCanal?.(i.canal.id)}
             className="font-semibold text-sm hover:underline truncate max-w-full text-left"
           >
-            {nombre} <span className="text-suave font-normal">{codigo}</span>
+            {nombre} <span className="text-suave font-normal">{codigo} · {i.canal.periodo}</span>
           </button>
           <p className="flex items-center gap-1.5 text-xs text-suave mt-0.5">
             <AvatarAnonimo tamaño="sm" />

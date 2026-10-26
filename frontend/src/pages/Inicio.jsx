@@ -71,13 +71,17 @@ export default function Inicio() {
             <CanalAvatar canal={activo} tamaño="lg" />
             <div className="min-w-0 flex-1">
               <h1 className="text-xl font-bold leading-tight">{partesCanal(activo.nombre).nombre}</h1>
-              <p className="text-sm text-suave">{partesCanal(activo.nombre).codigo} · {activo.totalSuscritos} suscritos</p>
+              <p className="text-sm text-suave">{partesCanal(activo.nombre).codigo} · {activo.periodo} · {activo.totalSuscritos} suscritos</p>
               <p className="text-sm mt-1">{activo.descripcion}</p>
             </div>
           </Tarjeta>
         )}
 
-        {rol === 'ESTUDIANTE' && (
+        {activo && !activo.activo && (
+          <Alerta tipo="info">Este canal está desactivado: conserva sus incidencias, pero ya no admite nuevas.</Alerta>
+        )}
+
+        {rol === 'ESTUDIANTE' && (!activo || activo.activo) && (
           <Tarjeta className="p-3 flex items-center gap-3">
             <AvatarAnonimo />
             <button

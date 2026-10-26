@@ -18,9 +18,10 @@ function semilla() {
       { id: 5, codigo: 'INF285', nombre: 'Sistemas Operativos' }
     ],
     canales: [
-      { id: 1, cursoId: 1, nombre: 'INF263 · Algoritmia', descripcion: 'Incidencias del curso de Algoritmia', fechaCreacion: haceHoras(400) },
-      { id: 2, cursoId: 2, nombre: 'INF281 · Bases de Datos', descripcion: 'Incidencias del curso de Bases de Datos', fechaCreacion: haceHoras(400) },
-      { id: 3, cursoId: 3, nombre: 'INF246 · Ingeniería de Software', descripcion: 'Incidencias del curso de Ingeniería de Software', fechaCreacion: haceHoras(300) }
+      { id: 1, cursoId: 1, periodo: '2026-2', activo: true, nombre: 'INF263 · Algoritmia', descripcion: 'Incidencias del curso de Algoritmia (2026-2)', fechaCreacion: haceHoras(400) },
+      { id: 2, cursoId: 2, periodo: '2026-2', activo: true, nombre: 'INF281 · Bases de Datos', descripcion: 'Incidencias del curso de Bases de Datos (2026-2)', fechaCreacion: haceHoras(400) },
+      { id: 3, cursoId: 3, periodo: '2026-2', activo: true, nombre: 'INF246 · Ingeniería de Software', descripcion: 'Incidencias del curso de Ingeniería de Software (2026-2)', fechaCreacion: haceHoras(300) },
+      { id: 4, cursoId: 1, periodo: '2026-1', activo: false, nombre: 'INF263 · Algoritmia', descripcion: 'Incidencias del curso de Algoritmia (2026-1)', fechaCreacion: haceHoras(3000) }
     ],
     usuarios: [
       { id: 1, usuario: 'admin', correo: 'admin@pucp.edu.pe', password: 'admin123', rol: 'ADMIN', estado: 'ACTIVA', fechaRegistro: haceHoras(800) },
@@ -35,7 +36,7 @@ function semilla() {
     suscripciones: [
       { usuarioId: 3, canalId: 1 }, { usuarioId: 3, canalId: 2 },
       { usuarioId: 4, canalId: 1 }, { usuarioId: 4, canalId: 2 },
-      { usuarioId: 5, canalId: 1 }, { usuarioId: 5, canalId: 3 },
+      { usuarioId: 5, canalId: 1 }, { usuarioId: 5, canalId: 3 }, { usuarioId: 5, canalId: 4 },
       { usuarioId: 6, canalId: 2 }
     ],
     incidencias: [
@@ -68,6 +69,12 @@ function semilla() {
         titulo: 'Queja general del curso',
         descripcion: 'No me gusta el curso.',
         revision: { decision: 'RECHAZADA', motivoId: 2, comentario: 'Describe una situación concreta (qué pasó y cuándo) para poder evaluarla.', fecha: haceHoras(95), directorId: 2 }
+      },
+      {
+        id: 6, canalId: 4, autorId: 5, estado: 'RESUELTA', fechaCreacion: haceHoras(2900),
+        titulo: 'Cambio de aula sin aviso',
+        descripcion: 'En el periodo anterior el aula del laboratorio cambió dos veces sin que se avisara por el campus virtual.',
+        revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(2890), directorId: 2 }
       }
     ],
     confirmaciones: [
@@ -186,10 +193,20 @@ function serCanal(db, u, c) {
     id: c.id,
     nombre: c.nombre,
     descripcion: c.descripcion,
+    periodo: c.periodo,
+    activo: c.activo,
     curso: { id: curso.id, codigo: curso.codigo, nombre: curso.nombre },
     suscrito: estaSuscrito(db, u, c.id),
     totalSuscritos: suscritosDe(db, c.id).length,
     totalPublicadas: db.incidencias.filter(i => i.canalId === c.id && esVisible(i.estado)).length
+  }
+}
+
+function serCanalAdmin(db, u, c) {
+  return {
+    ...serCanal(db, u, c),
+    fechaCreacion: c.fechaCreacion,
+    totalPendientes: db.incidencias.filter(i => i.canalId === c.id && i.estado === 'PENDIENTE').length
   }
 }
 
@@ -215,7 +232,7 @@ function serIncidencia(db, u, i, { detalle = false } = {}) {
     descripcion: i.descripcion,
     estado: i.estado,
     fechaCreacion: i.fechaCreacion,
-    canal: { id: canal.id, nombre: canal.nombre },
+    canal: { id: canal.id, nombre: canal.nombre, periodo: canal.periodo },
     confirmaciones: confirmacionesDe(db, i.id),
     confirmadaPorMi: db.confirmaciones.some(c => c.incidenciaId === i.id && c.usuarioId === u.id),
     reacciones: conteoReacciones(db, i.id),
@@ -278,6 +295,7 @@ const rutas = [
   ['post', /^\/canales\/(\d+)\/suscripcion$/, ({ db, u, args }) => {
     requerir(u, 'ESTUDIANTE', 'PROFESOR')
     const canal = canalDe(db, args[0])
+    if (!canal.activo) error(409, 'Este canal está desactivado y ya no admite suscripciones')
     if (!estaSuscrito(db, u, canal.id)) db.suscripciones.push({ usuarioId: u.id, canalId: canal.id })
     return { data: serCanal(db, u, canal) }
   }],
@@ -322,6 +340,7 @@ const rutas = [
   ['post', /^\/incidencias$/, ({ db, u, body }) => {
     requerir(u, 'ESTUDIANTE')
     const canal = canalDe(db, Number(body.canalId))
+    if (!canal.activo) error(409, 'Este canal está desactivado y ya no admite incidencias')
     const titulo = (body.titulo ?? '').trim()
     const descripcion = (body.descripcion ?? '').trim()
     if (titulo.length < 5 || titulo.length > 100) error(400, 'El título debe tener entre 5 y 100 caracteres')
@@ -476,34 +495,66 @@ const rutas = [
     auditar(db, 'CUENTA_DESACTIVADA', u.usuario, null, x.usuario)
     return { data: serUsuarioAdmin(x) }
   }],
-  ['get', /^\/admin\/cursos$/, ({ db, u }) => {
-    requerir(u, 'ADMIN')
-    return { data: db.cursos.map(c => ({ ...c, tieneCanal: db.canales.some(k => k.cursoId === c.id) })) }
+  ['get', /^\/periodos$/, ({ db, u }) => {
+    requerir(u, 'ADMIN', 'DIRECTOR')
+    return { data: [...new Set(db.canales.map(c => c.periodo))].sort().reverse() }
   }],
-  ['get', /^\/admin\/canales$/, ({ db, u }) => {
+  ['get', /^\/admin\/cursos$/, ({ db, u, params }) => {
     requerir(u, 'ADMIN')
-    return {
-      data: db.canales.map(c => ({
-        ...serCanal(db, u, c),
-        fechaCreacion: c.fechaCreacion,
-        totalPendientes: db.incidencias.filter(i => i.canalId === c.id && i.estado === 'PENDIENTE').length
-      }))
-    }
+    const lista = db.cursos.map(c => ({ ...c, tieneCanal: db.canales.some(k => k.cursoId === c.id && k.periodo === params.periodo) }))
+    return { data: lista.sort((a, b) => a.codigo.localeCompare(b.codigo)) }
+  }],
+  ['post', /^\/admin\/cursos$/, ({ db, u, body }) => {
+    requerir(u, 'ADMIN')
+    const codigo = (body.codigo ?? '').trim().toUpperCase()
+    const nombre = (body.nombre ?? '').trim()
+    if (!/^[A-Z0-9]{3,10}$/.test(codigo)) error(400, 'El código debe tener entre 3 y 10 letras o números')
+    if (nombre.length < 3 || nombre.length > 80) error(400, 'El nombre debe tener entre 3 y 80 caracteres')
+    if (db.cursos.some(c => c.codigo === codigo)) error(409, 'Ya existe un curso con ese código')
+    const curso = { id: siguienteId(db.cursos), codigo, nombre }
+    db.cursos.push(curso)
+    auditar(db, 'CURSO_REGISTRADO', u.usuario, null, `${codigo} · ${nombre}`)
+    return { status: 201, data: { ...curso, tieneCanal: false } }
+  }],
+  ['get', /^\/admin\/canales$/, ({ db, u, params }) => {
+    requerir(u, 'ADMIN')
+    const lista = db.canales
+      .filter(c => !params.periodo || c.periodo === params.periodo)
+      .sort((a, b) => b.periodo.localeCompare(a.periodo) || a.nombre.localeCompare(b.nombre))
+    return { data: lista.map(c => serCanalAdmin(db, u, c)) }
   }],
   ['post', /^\/admin\/canales$/, ({ db, u, body }) => {
     requerir(u, 'ADMIN')
-    const curso = db.cursos.find(c => c.id === Number(body.cursoId)) ?? error(400, 'Elige un curso')
-    if (db.canales.some(c => c.cursoId === curso.id)) error(409, 'Ese curso ya tiene un canal')
-    const canal = {
-      id: siguienteId(db.canales),
-      cursoId: curso.id,
-      nombre: `${curso.codigo} · ${curso.nombre}`,
-      descripcion: (body.descripcion ?? '').trim() || `Incidencias del curso de ${curso.nombre}`,
-      fechaCreacion: ahora()
-    }
-    db.canales.push(canal)
-    auditar(db, 'CANAL_CREADO', u.usuario, null, canal.nombre)
-    return { status: 201, data: serCanal(db, u, canal) }
+    const periodo = (body.periodo ?? '').trim()
+    if (!/^\d{4}-[12]$/.test(periodo)) error(400, 'El periodo debe tener el formato año-semestre, por ejemplo 2026-2')
+    const ids = [...new Set((body.cursoIds ?? []).map(Number))]
+    if (ids.length === 0) error(400, 'Elige al menos un curso')
+    const cursos = ids.map(id => db.cursos.find(c => c.id === id) ?? error(400, 'Uno de los cursos no existe'))
+    const repetido = cursos.find(c => db.canales.some(k => k.cursoId === c.id && k.periodo === periodo))
+    if (repetido) error(409, `Ya existe un canal de ${repetido.codigo} para ${periodo}`)
+    const creados = cursos.map(curso => {
+      const canal = {
+        id: siguienteId(db.canales),
+        cursoId: curso.id,
+        periodo,
+        activo: true,
+        nombre: `${curso.codigo} · ${curso.nombre}`,
+        descripcion: `Incidencias del curso de ${curso.nombre} (${periodo})`,
+        fechaCreacion: ahora()
+      }
+      db.canales.push(canal)
+      auditar(db, 'CANAL_CREADO', u.usuario, null, `${canal.nombre} (${periodo})`)
+      return canal
+    })
+    return { status: 201, data: creados.map(c => serCanalAdmin(db, u, c)) }
+  }],
+  ['post', /^\/admin\/canales\/(\d+)\/desactivar$/, ({ db, u, args }) => {
+    requerir(u, 'ADMIN')
+    const canal = canalDe(db, args[0])
+    if (!canal.activo) error(409, 'El canal ya está desactivado')
+    canal.activo = false
+    auditar(db, 'CANAL_DESACTIVADO', u.usuario, null, `${canal.nombre} (${canal.periodo})`)
+    return { data: serCanalAdmin(db, u, canal) }
   }],
   ['get', /^\/admin\/auditoria$/, ({ db, u }) => {
     requerir(u, 'ADMIN')
