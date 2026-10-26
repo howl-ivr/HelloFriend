@@ -84,7 +84,12 @@ problema y usa `flyway:repair`, o recrea la base.
 | Restricciones | Prefijos `pk_`, `uq_`, `ck_`, `fk_`, `ix_` seguidos de tabla y columna: `uq_usuarios_usuario_correo`. Las pruebas de integración comprueban las reglas por ese nombre. |
 | Texto | Identificadores sin tildes ni ñ. |
 
-## 5. Plan de migraciones (solo lista; hoy existe `V1`)
+## 5. Plan de migraciones (hoy existen `V1` y `V2`)
+
+> **Actualizado:** el modelo de incidencias se consolidó en una sola `V2__modelo_incidencias.sql` (excepción a la regla de
+> migraciones pequeñas, porque aún no se había subido nada). Reemplaza las filas V2 a V12 de abajo, que quedan solo como
+> historial del plan inicial. Las siguientes migraciones empiezan en `V3`. Motivos y cambios (periodo como columnas, tokens en
+> `usuarios_usuario`, auditoría como vista): [`2026-10-26-modelo-incidencias.md`](../decisiones/2026-10-26-modelo-incidencias.md).
 
 | N.º | Archivo | Tablas |
 | --- | --- | --- |
@@ -111,6 +116,9 @@ palabras con las incidencias aprobadas del mismo canal, que son pocas. Así no d
 `FULLTEXT` (palabras vacías en inglés, token mínimo) ni de que los datos estén confirmados para poder buscarlos.
 
 ### Auditoría de solo adición (HU-19): por la aplicación y por permisos
+
+> **Actualizado:** en la `V2` la auditoría es la vista `auditoria_historial_incidencia` (sin tabla `auditoria_evento`). Las tablas de solo
+> adición son `incidencias_version` e `incidencias_historial_estado`; el criterio de abajo (solo `INSERT` y `SELECT`) se aplica a ellas.
 
 Sin triggers. Se garantiza así:
 - La aplicación solo hace `INSERT` y `SELECT` sobre `auditoria_evento`: no hay código que la actualice o borre.
