@@ -27,7 +27,8 @@ Cuentas del modo demostración:
 
 | Usuario | Contraseña | Rol |
 |---|---|---|
-| alumno1, alumno2 | alumno123 | Estudiante |
+| alumno1 a alumno5 | alumno123 | Estudiante |
+| cachimbo26 | nuevo123 | Estudiante recién registrado |
 | profesor | profesor123 | Profesor |
 | director | director123 | Director de carrera |
 | admin | admin123 | Administrador |
@@ -55,4 +56,4 @@ src/
   utils/       formato de fechas, estados y textos compartidos
 ```
 
-Rutas por rol: estudiante y profesor usan `/inicio`; el estudiante además `/incidencias/nueva` y `/mis-incidencias`; el director `/director/*`; el administrador `/admin/*`. La protección está en `components/RutaProtegida.jsx`.
+Rutas por rol: estudiante y profesor usan `/inicio`; el estudiante además `/incidencias/nueva`, `/incidencias/:id/editar` y `/mis-incidencias`; el director `/director/*` (pendientes, publicadas y estadísticas); el administrador `/admin/*` (usuarios, canales y auditoría). La protección está en `components/RutaProtegida.jsx`.
