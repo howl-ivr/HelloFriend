@@ -31,8 +31,9 @@ Cuentas del modo demostración:
 | profesor | profesor123 | Profesor |
 | director | director123 | Director de carrera |
 | admin | admin123 | Administrador |
+| exalumno | alumno123 | Cuenta desactivada (no puede ingresar) |
 
-Para reiniciar los datos simulados: `localStorage.removeItem('hf_mock_db_v2')` en la consola del navegador.
+Para reiniciar los datos simulados: `localStorage.removeItem('hf_mock_db_v3')` en la consola del navegador.
 
 ## Scripts
 

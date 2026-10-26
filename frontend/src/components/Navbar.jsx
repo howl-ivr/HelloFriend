@@ -16,7 +16,7 @@ const ENLACES = {
     { to: '/director/publicadas', texto: 'Publicadas' }
   ],
   ADMIN: [
-    { to: '/admin/cuentas', texto: 'Solicitudes' },
+    { to: '/admin/cuentas', texto: 'Usuarios' },
     { to: '/admin/canales', texto: 'Canales' },
     { to: '/admin/auditoria', texto: 'Auditoría' }
   ]

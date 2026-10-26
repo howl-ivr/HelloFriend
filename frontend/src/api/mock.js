@@ -1,9 +1,10 @@
 // Backend simulado en el navegador. Se activa con VITE_MOCK=true (.env.development).
 // Implementa el mismo contrato que docs/API.md, así el frontend no cambia al conectar Spring Boot.
-// Los datos se guardan en localStorage; para reiniciarlos: localStorage.removeItem('hf_mock_db_v2')
+// Los datos se guardan en localStorage; para reiniciarlos: localStorage.removeItem('hf_mock_db_v3')
 import { AxiosError } from 'axios'
 
-const CLAVE = 'hf_mock_db_v2'
+const CLAVE = 'hf_mock_db_v3'
+const ROLES_VALIDOS = ['ESTUDIANTE', 'PROFESOR', 'DIRECTOR', 'ADMIN']
 const ahora = () => new Date().toISOString()
 const haceHoras = h => new Date(Date.now() - h * 3600000).toISOString()
 
@@ -28,8 +29,8 @@ function semilla() {
       { id: 4, usuario: 'alumno1', correo: 'alumno1@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(500) },
       { id: 5, usuario: 'alumno2', correo: 'alumno2@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(480) },
       { id: 6, usuario: 'alumno3', correo: 'alumno3@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(470) },
-      { id: 7, usuario: 'nuevo', correo: 'nuevo.alumno@pucp.edu.pe', password: 'nuevo123', rol: 'ESTUDIANTE', estado: 'PENDIENTE', fechaRegistro: haceHoras(3) },
-      { id: 8, usuario: 'cachimbo26', correo: 'cachimbo26@pucp.edu.pe', password: 'nuevo123', rol: 'ESTUDIANTE', estado: 'PENDIENTE', fechaRegistro: haceHoras(1) }
+      { id: 7, usuario: 'exalumno', correo: 'exalumno@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'DESACTIVADA', fechaRegistro: haceHoras(600) },
+      { id: 8, usuario: 'cachimbo26', correo: 'cachimbo26@pucp.edu.pe', password: 'nuevo123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(1) }
     ],
     suscripciones: [
       { usuarioId: 3, canalId: 1 }, { usuarioId: 3, canalId: 2 },
@@ -238,9 +239,9 @@ function serIncidencia(db, u, i, { detalle = false } = {}) {
 const porPrioridad = db => (a, b) => confirmacionesDe(db, b.id) - confirmacionesDe(db, a.id) || b.fechaCreacion.localeCompare(a.fechaCreacion)
 const porRecientes = (a, b) => b.fechaCreacion.localeCompare(a.fechaCreacion)
 
-// El correo nunca sale del backend: el administrador lo consulta en la base de datos para verificar en el campus.
+// Solo el administrador recibe el correo de un usuario (para buscar y gestionar cuentas).
 function serUsuarioAdmin(u) {
-  return { id: u.id, usuario: u.usuario, rol: u.rol, estado: u.estado, fechaRegistro: u.fechaRegistro }
+  return { id: u.id, usuario: u.usuario, correo: u.correo, rol: u.rol, estado: u.estado, fechaRegistro: u.fechaRegistro }
 }
 
 // ---------- Rutas ----------
@@ -254,15 +255,14 @@ const rutas = [
     if ((body.password ?? '').length < 6) error(400, 'La contraseña debe tener al menos 6 caracteres')
     if (db.usuarios.some(u => u.correo === correo)) error(409, 'Ese correo ya está registrado')
     if (db.usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase())) error(409, 'Ese usuario ya existe, elige otro')
-    db.usuarios.push({ id: siguienteId(db.usuarios), usuario, correo, password: body.password, rol: 'ESTUDIANTE', estado: 'PENDIENTE', fechaRegistro: ahora() })
-    auditar(db, 'CUENTA_REGISTRADA', 'Sistema', null, `Nueva cuenta pendiente: ${usuario}`)
-    return { status: 201, data: { mensaje: 'Cuenta creada. Un administrador validará tu registro.' } }
+    db.usuarios.push({ id: siguienteId(db.usuarios), usuario, correo, password: body.password, rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: ahora() })
+    auditar(db, 'CUENTA_REGISTRADA', 'Sistema', null, `Nueva cuenta: ${usuario}`)
+    return { status: 201, data: { mensaje: 'Cuenta creada. Ya puedes iniciar sesión.' } }
   }],
   ['post', /^\/auth\/login$/, ({ db, body }) => {
     const u = db.usuarios.find(x => x.usuario.toLowerCase() === (body.usuario ?? '').trim().toLowerCase())
     if (!u || u.password !== body.password) error(401, 'Usuario o contraseña incorrectos')
-    if (u.estado === 'PENDIENTE') error(403, 'Tu cuenta aún está pendiente de validación por el administrador')
-    if (u.estado === 'RECHAZADA') error(403, 'Tu solicitud de cuenta fue rechazada. Comunícate con la coordinación.')
+    if (u.estado === 'DESACTIVADA') error(403, 'Tu cuenta está desactivada. Comunícate con la administración.')
     return { data: { token: crearToken(u), usuario: u.usuario, rol: u.rol } }
   }],
 
@@ -449,23 +449,31 @@ const rutas = [
   // Administrador
   ['get', /^\/admin\/usuarios$/, ({ db, u, params }) => {
     requerir(u, 'ADMIN')
-    const lista = db.usuarios.filter(x => x.rol === 'ESTUDIANTE' && (!params.estado || x.estado === params.estado))
-    return { data: lista.sort((a, b) => a.fechaRegistro.localeCompare(b.fechaRegistro)).map(serUsuarioAdmin) }
+    const q = (params.buscar ?? '').trim().toLowerCase()
+    const lista = db.usuarios.filter(x =>
+      (!q || x.usuario.toLowerCase().includes(q) || x.correo.toLowerCase().includes(q)) &&
+      (!params.rol || x.rol === params.rol)
+    )
+    return { data: lista.sort((a, b) => a.usuario.localeCompare(b.usuario)).map(serUsuarioAdmin) }
   }],
-  ['post', /^\/admin\/usuarios\/(\d+)\/aprobar$/, ({ db, u, args }) => {
+  ['put', /^\/admin\/usuarios\/(\d+)\/rol$/, ({ db, u, args, body }) => {
     requerir(u, 'ADMIN')
     const x = db.usuarios.find(y => y.id === args[0]) ?? error(404, 'Usuario no encontrado')
-    if (x.estado !== 'PENDIENTE') error(409, 'La solicitud ya fue revisada')
-    x.estado = 'ACTIVA'
-    auditar(db, 'CUENTA_APROBADA', u.usuario, null, x.usuario)
+    if (!ROLES_VALIDOS.includes(body.rol)) error(400, 'Elige un rol válido')
+    if (x.id === u.id) error(403, 'No puedes cambiar tu propio rol')
+    if (x.rol !== body.rol) {
+      auditar(db, 'ROL_ASIGNADO', u.usuario, null, `${x.usuario}: de ${x.rol} a ${body.rol}`)
+      x.rol = body.rol
+    }
     return { data: serUsuarioAdmin(x) }
   }],
-  ['post', /^\/admin\/usuarios\/(\d+)\/rechazar$/, ({ db, u, args }) => {
+  ['post', /^\/admin\/usuarios\/(\d+)\/desactivar$/, ({ db, u, args }) => {
     requerir(u, 'ADMIN')
     const x = db.usuarios.find(y => y.id === args[0]) ?? error(404, 'Usuario no encontrado')
-    if (x.estado !== 'PENDIENTE') error(409, 'La solicitud ya fue revisada')
-    x.estado = 'RECHAZADA'
-    auditar(db, 'CUENTA_RECHAZADA', u.usuario, null, x.usuario)
+    if (x.id === u.id) error(403, 'No puedes desactivar tu propia cuenta')
+    if (x.estado === 'DESACTIVADA') error(409, 'La cuenta ya está desactivada')
+    x.estado = 'DESACTIVADA'
+    auditar(db, 'CUENTA_DESACTIVADA', u.usuario, null, x.usuario)
     return { data: serUsuarioAdmin(x) }
   }],
   ['get', /^\/admin\/cursos$/, ({ db, u }) => {

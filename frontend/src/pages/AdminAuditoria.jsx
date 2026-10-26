@@ -5,8 +5,8 @@ import { fechaHora } from '../utils/formato'
 
 const ACCIONES = {
   CUENTA_REGISTRADA: 'Cuenta registrada',
-  CUENTA_APROBADA: 'Cuenta aprobada',
-  CUENTA_RECHAZADA: 'Cuenta rechazada',
+  CUENTA_DESACTIVADA: 'Cuenta desactivada',
+  ROL_ASIGNADO: 'Rol asignado',
   CANAL_CREADO: 'Canal creado',
   INCIDENCIA_REGISTRADA: 'Incidencia registrada',
   INCIDENCIA_APROBADA: 'Incidencia aprobada',
