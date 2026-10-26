@@ -6,7 +6,9 @@ import { Alerta, Cargando, Titulo, Vacio, claseBoton, claseBotonSecundario, clas
 export default function NuevaIncidencia() {
   const [params] = useSearchParams()
   const [canales, setCanales] = useState(null)
+  const [categorias, setCategorias] = useState([])
   const [canalId, setCanalId] = useState(params.get('canal') ?? '')
+  const [categoria, setCategoria] = useState('')
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [error, setError] = useState('')
@@ -14,8 +16,8 @@ export default function NuevaIncidencia() {
   const [enviada, setEnviada] = useState(false)
 
   useEffect(() => {
-    api.get('/canales')
-      .then(r => setCanales(r.data))
+    Promise.all([api.get('/canales'), api.get('/categorias')])
+      .then(([c, k]) => { setCanales(c.data); setCategorias(k.data) })
       .catch(e => setError(mensajeError(e)))
   }, [])
 
@@ -24,7 +26,7 @@ export default function NuevaIncidencia() {
     setError('')
     setEnviando(true)
     try {
-      await api.post('/incidencias', { canalId: Number(canalElegido), titulo: titulo.trim(), descripcion: descripcion.trim() })
+      await api.post('/incidencias', { canalId: Number(canalElegido), categoria, titulo: titulo.trim(), descripcion: descripcion.trim() })
       setEnviada(true)
     } catch (err) {
       setError(mensajeError(err))
@@ -57,7 +59,7 @@ export default function NuevaIncidencia() {
   }
 
   const canalElegido = activos.some(c => String(c.id) === String(canalId)) ? canalId : ''
-  const valido = canalElegido && titulo.trim().length >= 5 && descripcion.trim().length >= 20
+  const valido = canalElegido && categoria && titulo.trim().length >= 5 && descripcion.trim().length >= 20
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -76,6 +78,13 @@ export default function NuevaIncidencia() {
             {activos.map(c => <option key={c.id} value={c.id}>{c.nombre} · {c.periodo}</option>)}
           </select>
           <p className="text-xs text-suave mt-1">Al reportar quedas suscrito al canal para recibir novedades.</p>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-tinta">Categoría</label>
+          <select value={categoria} onChange={e => setCategoria(e.target.value)} required className={`${claseInput} mt-1`}>
+            <option value="">Elige una categoría...</option>
+            {categorias.map(k => <option key={k} value={k}>{k}</option>)}
+          </select>
         </div>
         <div>
           <label className="text-sm font-medium text-tinta">Título</label>

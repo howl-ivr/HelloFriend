@@ -20,6 +20,12 @@ export const ESTADOS = {
   RESUELTA: { etiqueta: 'Resuelta', clase: 'bg-green-100 text-green-800' }
 }
 
+export const PRIORIDADES = {
+  ALTA: { etiqueta: 'Prioridad alta', clase: 'bg-red-100 text-red-800' },
+  MEDIA: { etiqueta: 'Prioridad media', clase: 'bg-amber-100 text-amber-800' },
+  BAJA: { etiqueta: 'Prioridad baja', clase: 'bg-slate-100 text-slate-600' }
+}
+
 export const REACCIONES = [
   { tipo: 'APOYO', icono: '🤝', etiqueta: 'Apoyo' },
   { tipo: 'PREOCUPANTE', icono: '😟', etiqueta: 'Preocupante' },

@@ -6,7 +6,7 @@ import BotonConfirmar from '../components/BotonConfirmar'
 import Reacciones from '../components/Reacciones'
 import Comentarios from '../components/Comentarios'
 import AccionesDirector from '../components/AccionesDirector'
-import { Alerta, Cargando, EstadoBadge } from '../components/ui'
+import { Alerta, CategoriaChip, Cargando, EstadoBadge, PrioridadBadge } from '../components/ui'
 import { fechaHora, hace } from '../utils/formato'
 
 function Revision({ revision }) {
@@ -65,7 +65,11 @@ export default function DetalleIncidencia() {
           <span className="ml-auto"><EstadoBadge estado={inc.estado} /></span>
         </div>
 
-        <h1 className="text-xl font-bold text-tinta mb-3">{inc.titulo}</h1>
+        <h1 className="text-xl font-bold text-tinta mb-2">{inc.titulo}</h1>
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          <PrioridadBadge prioridad={inc.prioridad} />
+          <CategoriaChip categoria={inc.categoria} />
+        </div>
         <p className="text-tinta whitespace-pre-line mb-5">{inc.descripcion}</p>
 
         {(inc.esMia || rol === 'DIRECTOR') && <Revision revision={inc.revision} />}

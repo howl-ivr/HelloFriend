@@ -18,11 +18,12 @@ export default function Inicio() {
   const [todos, setTodos] = useState(null)
   const [errorCanales, setErrorCanales] = useState('')
   const [orden, setOrden] = useState('recientes')
+  const [prioridad, setPrioridad] = useState('')
   const [version, setVersion] = useState(0)
   const [feed, setFeed] = useState({ clave: null, lista: [], error: '' })
   const [explorando, setExplorando] = useState(params.get('explorar') === '1')
 
-  const clave = `${canalId}|${orden}|${version}`
+  const clave = `${canalId}|${orden}|${prioridad}|${version}`
 
   useEffect(() => {
     api.get('/canales')
@@ -33,11 +34,12 @@ export default function Inicio() {
   useEffect(() => {
     const p = { orden }
     if (canalId) p.canalId = canalId
-    const k = `${canalId}|${orden}|${version}`
+    if (prioridad) p.prioridad = prioridad
+    const k = `${canalId}|${orden}|${prioridad}|${version}`
     api.get('/feed', { params: p })
       .then(r => setFeed({ clave: k, lista: r.data, error: '' }))
       .catch(e => setFeed({ clave: k, lista: [], error: mensajeError(e) }))
-  }, [canalId, orden, version])
+  }, [canalId, orden, prioridad, version])
 
   const elegirCanal = id => setParams(id ? { canal: String(id) } : {})
   const cerrarExplorar = useCallback(() => setExplorando(false), [])
@@ -96,6 +98,17 @@ export default function Inicio() {
         <div className="flex items-center gap-1">
           <button onClick={() => setOrden('recientes')} className={pestaña('recientes')}>Recientes</button>
           <button onClick={() => setOrden('prioridad')} className={pestaña('prioridad')}>Más confirmadas</button>
+          <select
+            value={prioridad}
+            onChange={e => setPrioridad(e.target.value)}
+            aria-label="Filtrar por prioridad"
+            className="ml-auto rounded-full border border-linea bg-white px-3 py-1.5 text-sm font-medium text-suave focus:outline-none focus:ring-2 focus:ring-marca/40"
+          >
+            <option value="">Toda prioridad</option>
+            <option value="ALTA">Prioridad alta</option>
+            <option value="MEDIA">Prioridad media</option>
+            <option value="BAJA">Prioridad baja</option>
+          </select>
         </div>
 
         {suscritos.length === 0 ? (

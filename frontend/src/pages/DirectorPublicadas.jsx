@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeError } from '../api/client'
 import AccionesDirector from '../components/AccionesDirector'
-import { Alerta, Cargando, Titulo, Vacio } from '../components/ui'
+import { Alerta, CategoriaChip, Cargando, PrioridadBadge, Titulo, Vacio } from '../components/ui'
 import { hace, REACCIONES } from '../utils/formato'
 
 export default function DirectorPublicadas() {
@@ -58,6 +58,10 @@ export default function DirectorPublicadas() {
                   <span>{hace(i.fechaCreacion)}</span>
                 </div>
                 <Link to={`/incidencias/${i.id}`} className="font-semibold text-tinta hover:underline">{i.titulo}</Link>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  <PrioridadBadge prioridad={i.prioridad} />
+                  <CategoriaChip categoria={i.categoria} />
+                </div>
                 <p className="text-xs text-suave mt-1">
                   {REACCIONES.map(r => `${r.icono} ${i.reacciones[r.tipo]}`).join('   ')}   💬 {i.totalComentarios}
                 </p>

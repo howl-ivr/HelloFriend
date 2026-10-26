@@ -5,6 +5,11 @@ import { AxiosError } from 'axios'
 
 const CLAVE = 'hf_mock_db_v3'
 const ROLES_VALIDOS = ['ESTUDIANTE', 'PROFESOR', 'DIRECTOR', 'ADMIN']
+const CATEGORIAS = ['Evaluaciones y notas', 'Horarios y aulas', 'Infraestructura y equipos', 'Material y contenidos', 'Comunicación y avisos', 'Otro']
+// Prioridad según confirmaciones: 0-1 baja, 2-4 media, 5 o más alta (RF-11.4)
+const UMBRAL_ALTA = 5
+const UMBRAL_MEDIA = 2
+const prioridadDe = n => (n >= UMBRAL_ALTA ? 'ALTA' : n >= UMBRAL_MEDIA ? 'MEDIA' : 'BAJA')
 const ahora = () => new Date().toISOString()
 const haceHoras = h => new Date(Date.now() - h * 3600000).toISOString()
 
@@ -31,55 +36,65 @@ function semilla() {
       { id: 5, usuario: 'alumno2', correo: 'alumno2@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(480) },
       { id: 6, usuario: 'alumno3', correo: 'alumno3@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(470) },
       { id: 7, usuario: 'exalumno', correo: 'exalumno@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'DESACTIVADA', fechaRegistro: haceHoras(600) },
-      { id: 8, usuario: 'cachimbo26', correo: 'cachimbo26@pucp.edu.pe', password: 'nuevo123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(1) }
+      { id: 8, usuario: 'cachimbo26', correo: 'cachimbo26@pucp.edu.pe', password: 'nuevo123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(1) },
+      { id: 9, usuario: 'alumno4', correo: 'alumno4@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(460) },
+      { id: 10, usuario: 'alumno5', correo: 'alumno5@pucp.edu.pe', password: 'alumno123', rol: 'ESTUDIANTE', estado: 'ACTIVA', fechaRegistro: haceHoras(450) }
     ],
     suscripciones: [
       { usuarioId: 3, canalId: 1 }, { usuarioId: 3, canalId: 2 },
       { usuarioId: 4, canalId: 1 }, { usuarioId: 4, canalId: 2 },
       { usuarioId: 5, canalId: 1 }, { usuarioId: 5, canalId: 3 }, { usuarioId: 5, canalId: 4 },
-      { usuarioId: 6, canalId: 2 }
+      { usuarioId: 6, canalId: 2 },
+      { usuarioId: 8, canalId: 1 }, { usuarioId: 9, canalId: 1 }, { usuarioId: 10, canalId: 1 }
     ],
     incidencias: [
       {
         id: 1, canalId: 1, autorId: 5, estado: 'PUBLICADA', fechaCreacion: haceHoras(50),
+        categoria: 'Evaluaciones y notas',
         titulo: 'Dos evaluaciones programadas el mismo día',
         descripcion: 'La práctica calificada y la entrega del laboratorio quedaron para el mismo jueves. Varios compañeros del horario no llegamos a prepararnos bien para ambas.',
         revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(45), directorId: 2 }
       },
       {
         id: 2, canalId: 1, autorId: 4, estado: 'PUBLICADA', fechaCreacion: haceHoras(20),
+        categoria: 'Evaluaciones y notas',
         titulo: 'Las notas del laboratorio no se publican',
         descripcion: 'Ya pasaron tres semanas desde el laboratorio 2 y aún no tenemos la nota ni retroalimentación, lo que complica prepararse para el siguiente.',
         revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(18), directorId: 2 }
       },
       {
         id: 3, canalId: 2, autorId: 6, estado: 'RESUELTA', fechaCreacion: haceHoras(200),
+        categoria: 'Infraestructura y equipos',
         titulo: 'El aula asignada no tiene proyector',
         descripcion: 'En las sesiones de los martes no funciona el proyector y la clase se dicta sin diapositivas.',
         revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(190), directorId: 2 }
       },
       {
         id: 4, canalId: 2, autorId: 4, estado: 'PENDIENTE', fechaCreacion: haceHoras(2),
+        categoria: 'Material y contenidos',
         titulo: 'Enunciado del proyecto ambiguo',
         descripcion: 'El enunciado del proyecto final tiene requisitos contradictorios y no hay un canal para hacer consultas antes de la entrega.',
         revision: null
       },
       {
         id: 5, canalId: 1, autorId: 4, estado: 'RECHAZADA', fechaCreacion: haceHoras(100),
+        categoria: 'Otro',
         titulo: 'Queja general del curso',
         descripcion: 'No me gusta el curso.',
         revision: { decision: 'RECHAZADA', motivoId: 2, comentario: 'Describe una situación concreta (qué pasó y cuándo) para poder evaluarla.', fecha: haceHoras(95), directorId: 2 }
       },
       {
         id: 6, canalId: 4, autorId: 5, estado: 'RESUELTA', fechaCreacion: haceHoras(2900),
+        categoria: 'Comunicación y avisos',
         titulo: 'Cambio de aula sin aviso',
         descripcion: 'En el periodo anterior el aula del laboratorio cambió dos veces sin que se avisara por el campus virtual.',
         revision: { decision: 'APROBADA', motivoId: null, comentario: null, fecha: haceHoras(2890), directorId: 2 }
       }
     ],
     confirmaciones: [
-      { usuarioId: 4, incidenciaId: 1 },
-      { usuarioId: 5, incidenciaId: 2 },
+      { usuarioId: 4, incidenciaId: 1 }, { usuarioId: 6, incidenciaId: 1 }, { usuarioId: 8, incidenciaId: 1 },
+      { usuarioId: 9, incidenciaId: 1 }, { usuarioId: 10, incidenciaId: 1 },
+      { usuarioId: 5, incidenciaId: 2 }, { usuarioId: 6, incidenciaId: 2 },
       { usuarioId: 4, incidenciaId: 3 }
     ],
     reacciones: [
@@ -233,7 +248,9 @@ function serIncidencia(db, u, i, { detalle = false } = {}) {
     estado: i.estado,
     fechaCreacion: i.fechaCreacion,
     canal: { id: canal.id, nombre: canal.nombre, periodo: canal.periodo },
+    categoria: i.categoria,
     confirmaciones: confirmacionesDe(db, i.id),
+    prioridad: prioridadDe(confirmacionesDe(db, i.id)),
     confirmadaPorMi: db.confirmaciones.some(c => c.incidenciaId === i.id && c.usuarioId === u.id),
     reacciones: conteoReacciones(db, i.id),
     miReaccion: db.reacciones.find(r => r.incidenciaId === i.id && r.usuarioId === u.id)?.tipo ?? null,
@@ -323,6 +340,7 @@ const rutas = [
     if (canalId && !misCanales.includes(canalId)) error(403, 'Suscríbete al canal para ver sus incidencias')
     const lista = db.incidencias
       .filter(i => esVisible(i.estado) && (canalId ? i.canalId === canalId : misCanales.includes(i.canalId)))
+      .filter(i => !params.prioridad || prioridadDe(confirmacionesDe(db, i.id)) === params.prioridad)
       .sort(params.orden === 'prioridad' ? porPrioridad(db) : porRecientes)
     return { data: lista.map(i => serIncidencia(db, u, i)) }
   }],
@@ -343,9 +361,10 @@ const rutas = [
     if (!canal.activo) error(409, 'Este canal está desactivado y ya no admite incidencias')
     const titulo = (body.titulo ?? '').trim()
     const descripcion = (body.descripcion ?? '').trim()
+    if (!CATEGORIAS.includes(body.categoria)) error(400, 'Elige una categoría para la incidencia')
     if (titulo.length < 5 || titulo.length > 100) error(400, 'El título debe tener entre 5 y 100 caracteres')
     if (descripcion.length < 20 || descripcion.length > 1000) error(400, 'La descripción debe tener entre 20 y 1000 caracteres')
-    const inc = { id: siguienteId(db.incidencias), canalId: canal.id, autorId: u.id, titulo, descripcion, estado: 'PENDIENTE', fechaCreacion: ahora(), revision: null }
+    const inc = { id: siguienteId(db.incidencias), canalId: canal.id, autorId: u.id, categoria: body.categoria, titulo, descripcion, estado: 'PENDIENTE', fechaCreacion: ahora(), revision: null }
     db.incidencias.push(inc)
     if (!estaSuscrito(db, u, canal.id)) db.suscripciones.push({ usuarioId: u.id, canalId: canal.id })
     notificar(db, db.usuarios.filter(x => x.rol === 'DIRECTOR').map(x => x.id), inc.id, `Nueva incidencia pendiente en ${canal.nombre}`)
@@ -380,6 +399,10 @@ const rutas = [
     db.reacciones = db.reacciones.filter(r => !(r.incidenciaId === i.id && r.usuarioId === u.id))
     if (body.tipo) db.reacciones.push({ usuarioId: u.id, incidenciaId: i.id, tipo: body.tipo })
     return { data: { reacciones: conteoReacciones(db, i.id), miReaccion: body.tipo ?? null } }
+  }],
+  ['get', /^\/categorias$/, ({ u }) => {
+    requerir(u)
+    return { data: CATEGORIAS }
   }],
   ['get', /^\/comentarios-predefinidos$/, ({ db, u }) => {
     requerir(u)

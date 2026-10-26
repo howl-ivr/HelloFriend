@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeError } from '../api/client'
 import AccionesDirector from '../components/AccionesDirector'
-import { Alerta, Cargando, Titulo, Vacio } from '../components/ui'
+import { Alerta, CategoriaChip, Cargando, PrioridadBadge, Titulo, Vacio } from '../components/ui'
 import { fechaHora, hace } from '../utils/formato'
 
 export default function DirectorPendientes() {
@@ -39,6 +39,10 @@ export default function DirectorPendientes() {
                 <Link to={`/incidencias/${i.id}`} className="ml-auto hover:underline">Ver detalle</Link>
               </div>
               <h3 className="font-semibold text-tinta mb-1">{i.titulo}</h3>
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                <PrioridadBadge prioridad={i.prioridad} />
+                <CategoriaChip categoria={i.categoria} />
+              </div>
               <p className="text-sm text-tinta whitespace-pre-line mb-4">{i.descripcion}</p>
               <AccionesDirector incidencia={i} onHecho={() => setLista(l => l.filter(x => x.id !== i.id))} />
             </div>

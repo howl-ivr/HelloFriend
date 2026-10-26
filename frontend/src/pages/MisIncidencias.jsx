@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api, { mensajeError } from '../api/client'
-import { Alerta, Cargando, EstadoBadge, Titulo, Vacio, claseBoton } from '../components/ui'
+import { Alerta, CategoriaChip, Cargando, EstadoBadge, PrioridadBadge, Titulo, Vacio, claseBoton } from '../components/ui'
 import { hace } from '../utils/formato'
 
 export default function MisIncidencias() {
@@ -37,6 +37,10 @@ export default function MisIncidencias() {
                 <span className="ml-auto"><EstadoBadge estado={i.estado} /></span>
               </div>
               <h3 className="font-semibold text-tinta">{i.titulo}</h3>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <PrioridadBadge prioridad={i.prioridad} />
+                <CategoriaChip categoria={i.categoria} />
+              </div>
 
               {i.estado === 'RECHAZADA' && i.revision && (
                 <p className="text-sm text-red-700 mt-2">
