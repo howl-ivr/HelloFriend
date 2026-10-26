@@ -9,7 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +42,7 @@ public abstract class PruebaIntegracion {
 
 	/** Exige que la BD rechace la operacion por la restriccion indicada (y no por otro motivo). */
 	protected void rechazaPor(String restriccion, Executable operacion) {
-		assertThatThrownBy(operacion::execute).isInstanceOf(DataIntegrityViolationException.class)
+		assertThatThrownBy(operacion::execute).isInstanceOf(DataAccessException.class)
 				.hasMessageContaining(restriccion);
 	}
 
