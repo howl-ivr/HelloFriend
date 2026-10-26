@@ -12,7 +12,9 @@ export default function Comentarios({ incidencia }) {
 
   useEffect(() => {
     if (!habilitado) return
-    api.get('/comentarios-predefinidos').then(r => setOpciones(r.data))
+    api.get('/comentarios-predefinidos')
+      .then(r => setOpciones(r.data))
+      .catch(e => setError(mensajeError(e)))
   }, [habilitado])
 
   const enviar = async e => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import api from '../api/client'
-import { Cargando, Titulo, Vacio, claseInput } from '../components/ui'
+import api, { mensajeError } from '../api/client'
+import { Alerta, Cargando, Titulo, Vacio, claseInput } from '../components/ui'
 import { fechaHora } from '../utils/formato'
 
 const ACCIONES = {
@@ -16,12 +16,16 @@ const ACCIONES = {
 
 export default function AdminAuditoria() {
   const [registros, setRegistros] = useState(null)
+  const [error, setError] = useState('')
   const [filtro, setFiltro] = useState('')
 
   useEffect(() => {
-    api.get('/admin/auditoria').then(r => setRegistros(r.data))
+    api.get('/admin/auditoria')
+      .then(r => setRegistros(r.data))
+      .catch(e => setError(mensajeError(e)))
   }, [])
 
+  if (error) return <Alerta>{error}</Alerta>
   if (!registros) return <Cargando />
 
   const f = filtro.trim().toLowerCase()

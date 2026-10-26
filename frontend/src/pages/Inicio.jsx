@@ -6,7 +6,7 @@ import IncidenciaCard from '../components/IncidenciaCard'
 import ExplorarCanales from '../components/ExplorarCanales'
 import SidebarCanales, { BotonSuscribir, ChipsCanales } from '../components/SidebarCanales'
 import PanelDerecho from '../components/PanelDerecho'
-import { AvatarAnonimo, CanalAvatar, Cargando, Tarjeta, Vacio } from '../components/ui'
+import { Alerta, AvatarAnonimo, CanalAvatar, Cargando, Tarjeta, Vacio } from '../components/ui'
 import { partesCanal } from '../utils/formato'
 
 export default function Inicio() {
@@ -16,6 +16,7 @@ export default function Inicio() {
   const canalId = params.get('canal') ? Number(params.get('canal')) : null
 
   const [todos, setTodos] = useState(null)
+  const [errorCanales, setErrorCanales] = useState('')
   const [orden, setOrden] = useState('recientes')
   const [version, setVersion] = useState(0)
   const [feed, setFeed] = useState({ clave: null, lista: [], error: '' })
@@ -24,7 +25,9 @@ export default function Inicio() {
   const clave = `${canalId}|${orden}|${version}`
 
   useEffect(() => {
-    api.get('/canales').then(r => setTodos(r.data))
+    api.get('/canales')
+      .then(r => setTodos(r.data))
+      .catch(e => setErrorCanales(mensajeError(e)))
   }, [version])
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export default function Inicio() {
   const cerrarExplorar = useCallback(() => setExplorando(false), [])
   const huboCambio = useCallback(() => setVersion(v => v + 1), [])
 
-  if (!todos) return <Cargando />
+  if (!todos) return errorCanales ? <Alerta>{errorCanales}</Alerta> : <Cargando />
 
   const suscritos = todos.filter(c => c.suscrito)
   const activo = canalId ? todos.find(c => c.id === canalId) : null

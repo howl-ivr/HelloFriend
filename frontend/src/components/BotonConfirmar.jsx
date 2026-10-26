@@ -1,18 +1,22 @@
 import { useState } from 'react'
-import api from '../api/client'
+import api, { mensajeError } from '../api/client'
 
 export default function BotonConfirmar({ incidencia, compacto = false }) {
   const [total, setTotal] = useState(incidencia.confirmaciones)
   const [mia, setMia] = useState(incidencia.confirmadaPorMi)
   const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
   const habilitado = incidencia.puedeConfirmar
 
   const confirmar = async () => {
     setEnviando(true)
+    setError('')
     try {
       const { data } = await api.post(`/incidencias/${incidencia.id}/confirmacion`)
       setTotal(data.confirmaciones)
       setMia(data.confirmadaPorMi)
+    } catch (err) {
+      setError(mensajeError(err))
     } finally {
       setEnviando(false)
     }
@@ -47,11 +51,19 @@ export default function BotonConfirmar({ incidencia, compacto = false }) {
     </button>
   )
 
-  if (compacto) return boton
+  if (compacto) {
+    return (
+      <>
+        {boton}
+        {error && <span className="text-xs text-red-600 ml-2">{error}</span>}
+      </>
+    )
+  }
   return (
     <div>
       {boton}
       <p className="text-xs text-suave mt-1.5">{habilitado ? 'Confirmar aumenta la prioridad de la incidencia' : motivo}</p>
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   )
 }

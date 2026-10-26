@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/client'
+import api, { mensajeError } from '../api/client'
 import AccionesDirector from '../components/AccionesDirector'
-import { Cargando, Titulo, Vacio } from '../components/ui'
+import { Alerta, Cargando, Titulo, Vacio } from '../components/ui'
 import { hace, REACCIONES } from '../utils/formato'
 
 export default function DirectorPublicadas() {
   const [estado, setEstado] = useState('PUBLICADA')
   const [lista, setLista] = useState(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    api.get('/director/incidencias', { params: { estado } }).then(r => setLista(r.data))
+    api.get('/director/incidencias', { params: { estado } })
+      .then(r => setLista(r.data))
+      .catch(e => setError(mensajeError(e)))
   }, [estado])
+
+  const cambiarEstado = valor => {
+    setLista(null)
+    setError('')
+    setEstado(valor)
+  }
 
   const pestaña = valor =>
     `px-3 py-1.5 text-sm rounded ${estado === valor ? 'bg-tinta text-white' : 'text-suave hover:bg-linea'}`
@@ -23,11 +32,13 @@ export default function DirectorPublicadas() {
       </Titulo>
 
       <div className="flex gap-2 mb-4">
-        <button onClick={() => { setLista(null); setEstado('PUBLICADA') }} className={pestaña('PUBLICADA')}>Por atender</button>
-        <button onClick={() => { setLista(null); setEstado('RESUELTA') }} className={pestaña('RESUELTA')}>Resueltas</button>
+        <button onClick={() => cambiarEstado('PUBLICADA')} className={pestaña('PUBLICADA')}>Por atender</button>
+        <button onClick={() => cambiarEstado('RESUELTA')} className={pestaña('RESUELTA')}>Resueltas</button>
       </div>
 
-      {!lista ? (
+      {error ? (
+        <Alerta>{error}</Alerta>
+      ) : !lista ? (
         <Cargando />
       ) : lista.length === 0 ? (
         <Vacio>No hay incidencias en esta lista.</Vacio>

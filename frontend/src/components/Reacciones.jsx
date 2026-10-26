@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import api from '../api/client'
+import api, { mensajeError } from '../api/client'
 import { REACCIONES } from '../utils/formato'
 
 // Funciona como en Facebook: una reacción por persona, se elige desde un selector y se puede cambiar o quitar.
@@ -8,6 +8,7 @@ export default function Reacciones({ incidencia, habilitado }) {
   const [mia, setMia] = useState(incidencia.miReaccion)
   const [abierto, setAbierto] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
   const caja = useRef(null)
 
   useEffect(() => {
@@ -26,10 +27,13 @@ export default function Reacciones({ incidencia, habilitado }) {
     setAbierto(false)
     if (enviando) return
     setEnviando(true)
+    setError('')
     try {
       const { data } = await api.put(`/incidencias/${incidencia.id}/reaccion`, { tipo: mia === tipo ? null : tipo })
       setReacciones(data.reacciones)
       setMia(data.miReaccion)
+    } catch (err) {
+      setError(mensajeError(err))
     } finally {
       setEnviando(false)
     }
@@ -99,6 +103,8 @@ export default function Reacciones({ incidencia, habilitado }) {
           {total}
         </span>
       )}
+
+      {error && <span className="text-xs text-red-600">{error}</span>}
     </div>
   )
 }

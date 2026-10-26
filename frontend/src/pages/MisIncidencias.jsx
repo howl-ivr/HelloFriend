@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/client'
-import { Cargando, EstadoBadge, Titulo, Vacio, claseBoton } from '../components/ui'
+import api, { mensajeError } from '../api/client'
+import { Alerta, Cargando, EstadoBadge, Titulo, Vacio, claseBoton } from '../components/ui'
 import { hace } from '../utils/formato'
 
 export default function MisIncidencias() {
   const [lista, setLista] = useState(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    api.get('/mis-incidencias').then(r => setLista(r.data))
+    api.get('/mis-incidencias').then(r => setLista(r.data)).catch(e => setError(mensajeError(e)))
   }, [])
 
+  if (error) return <Alerta>{error}</Alerta>
   if (!lista) return <Cargando />
 
   return (

@@ -8,12 +8,13 @@ export default function AdminCanales() {
   const [cursoId, setCursoId] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [mensaje, setMensaje] = useState(null)
+  const [errorCarga, setErrorCarga] = useState('')
 
   const cargar = () =>
     Promise.all([api.get('/admin/canales'), api.get('/admin/cursos')]).then(([k, c]) => {
       setCanales(k.data)
       setCursos(c.data)
-    })
+    }).catch(e => setErrorCarga(mensajeError(e)))
 
   useEffect(() => {
     cargar()
@@ -33,6 +34,7 @@ export default function AdminCanales() {
     }
   }
 
+  if (errorCarga) return <Alerta>{errorCarga}</Alerta>
   if (!canales) return <Cargando />
   const disponibles = cursos.filter(c => !c.tieneCanal)
 

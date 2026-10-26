@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import api from '../api/client'
+import api, { mensajeError } from '../api/client'
 import AccionesDirector from '../components/AccionesDirector'
-import { Cargando, Titulo, Vacio } from '../components/ui'
+import { Alerta, Cargando, Titulo, Vacio } from '../components/ui'
 import { fechaHora, hace } from '../utils/formato'
 
 export default function DirectorPendientes() {
   const [lista, setLista] = useState(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    api.get('/director/incidencias', { params: { estado: 'PENDIENTE' } }).then(r => setLista(r.data))
+    api.get('/director/incidencias', { params: { estado: 'PENDIENTE' } })
+      .then(r => setLista(r.data))
+      .catch(e => setError(mensajeError(e)))
   }, [])
 
+  if (error) return <Alerta>{error}</Alerta>
   if (!lista) return <Cargando />
 
   return (

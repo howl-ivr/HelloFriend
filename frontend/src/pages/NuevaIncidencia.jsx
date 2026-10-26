@@ -14,7 +14,9 @@ export default function NuevaIncidencia() {
   const [enviada, setEnviada] = useState(false)
 
   useEffect(() => {
-    api.get('/canales').then(r => setCanales(r.data))
+    api.get('/canales')
+      .then(r => setCanales(r.data))
+      .catch(e => setError(mensajeError(e)))
   }, [])
 
   const enviar = async e => {
@@ -31,7 +33,7 @@ export default function NuevaIncidencia() {
     }
   }
 
-  if (!canales) return <Cargando />
+  if (!canales) return error ? <Alerta>{error}</Alerta> : <Cargando />
 
   if (enviada) {
     return (

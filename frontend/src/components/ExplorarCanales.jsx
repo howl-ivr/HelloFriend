@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import api from '../api/client'
-import { CanalAvatar, Cargando, claseInput } from './ui'
+import api, { mensajeError } from '../api/client'
+import { Alerta, CanalAvatar, Cargando, claseInput } from './ui'
 import { partesCanal } from '../utils/formato'
 
 export default function ExplorarCanales({ onCerrar, onCambio }) {
   const [canales, setCanales] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [enviando, setEnviando] = useState(null)
+  const [error, setError] = useState('')
   const input = useRef(null)
 
   useEffect(() => {
-    api.get('/canales').then(r => setCanales(r.data))
+    api.get('/canales')
+      .then(r => setCanales(r.data))
+      .catch(e => setError(mensajeError(e)))
     input.current?.focus()
     const escape = e => { if (e.key === 'Escape') onCerrar() }
     document.addEventListener('keydown', escape)
@@ -19,12 +22,15 @@ export default function ExplorarCanales({ onCerrar, onCambio }) {
 
   const alternar = async canal => {
     setEnviando(canal.id)
+    setError('')
     try {
       const { data } = canal.suscrito
         ? await api.delete(`/canales/${canal.id}/suscripcion`)
         : await api.post(`/canales/${canal.id}/suscripcion`)
       setCanales(cs => cs.map(c => (c.id === data.id ? data : c)))
       onCambio?.()
+    } catch (err) {
+      setError(mensajeError(err))
     } finally {
       setEnviando(null)
     }
@@ -49,7 +55,8 @@ export default function ExplorarCanales({ onCerrar, onCambio }) {
         </div>
 
         <ul className="mt-3 max-h-[55vh] overflow-y-auto px-2 pb-3">
-          {!canales && <li><Cargando /></li>}
+          {!canales && <li>{error ? <Alerta>{error}</Alerta> : <Cargando />}</li>}
+          {canales && error && <li className="px-3 pb-2"><Alerta>{error}</Alerta></li>}
           {canales && visibles.length === 0 && <li className="text-sm text-suave text-center py-8">Ningún curso coincide con “{busqueda}”.</li>}
           {visibles.map(c => {
             const { codigo, nombre } = partesCanal(c.nombre)
