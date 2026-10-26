@@ -19,6 +19,7 @@ Formato `tipo(alcance): qué cambió`, en español e imperativo. Tipos: `feat`, 
 ## Pull request
 
 1. Antes de abrirlo, en `backend/`: `.\mvnw.cmd verify` (formatea con `spotless:apply` si falla por formato).
+   Qué pruebas llevar: [`pruebas.md`](pruebas.md).
 2. `git fetch origin` y `git merge origin/develop` en tu rama; vuelve a correr las pruebas.
 3. Abre el PR hacia `develop` y completa el checklist de la plantilla.
 4. GitHub Actions corre `Backend`. Si sale en rojo, abre el paso que falló, corrige y vuelve a subir.
