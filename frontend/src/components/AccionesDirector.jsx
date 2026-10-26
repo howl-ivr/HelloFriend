@@ -35,7 +35,7 @@ export default function AccionesDirector({ incidencia, onHecho }) {
         <button
           onClick={() => ejecutar('resolver')}
           disabled={enviando}
-          className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded px-4 py-2 text-sm font-medium"
+          className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-full px-4 py-2 text-sm font-medium"
         >
           Marcar como resuelta
         </button>
@@ -67,7 +67,7 @@ export default function AccionesDirector({ incidencia, onHecho }) {
           <button
             onClick={() => ejecutar('rechazar', { motivoId: motivoId ? Number(motivoId) : null, comentario })}
             disabled={!valido || enviando}
-            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded px-4 py-2 text-sm font-medium"
+            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-full px-4 py-2 text-sm font-medium"
           >
             Confirmar rechazo
           </button>

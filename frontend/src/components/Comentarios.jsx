@@ -39,7 +39,7 @@ export default function Comentarios({ incidencia }) {
       ) : (
         <ul className="space-y-2 mb-4">
           {comentarios.map(c => (
-            <li key={c.id} className="bg-fondo border border-linea rounded px-3 py-2 text-sm">
+            <li key={c.id} className="bg-fondo border border-linea rounded-xl px-3 py-2 text-sm">
               <span className="text-tinta">{c.texto}</span>
               <span className="block text-xs text-suave mt-0.5">Alumno anónimo · {hace(c.fecha)}</span>
             </li>

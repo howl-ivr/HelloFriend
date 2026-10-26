@@ -23,7 +23,7 @@ export default function DirectorPublicadas() {
   }
 
   const pestaña = valor =>
-    `px-3 py-1.5 text-sm rounded ${estado === valor ? 'bg-tinta text-white' : 'text-suave hover:bg-linea'}`
+    `px-3 py-1.5 text-sm rounded-full ${estado === valor ? 'bg-tinta text-white' : 'text-suave hover:bg-linea'}`
 
   return (
     <div>
