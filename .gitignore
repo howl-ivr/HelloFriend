@@ -1,0 +1,35 @@
+# Archivos que Git no debe versionar. Las primeras líneas coinciden con el .gitignore de la rama front/setup
+# (así al fusionar solo hay que conservar este archivo); el resto cubre backend (Java/Maven), secretos y IDE.
+.DS_Store
+.idea/
+*.iml
+backend/target/
+backend/src/main/resources/static/
+.env.local
+
+# Java / Maven
+target/
+*.class
+*.log
+logs/
+
+# Node (el frontend tiene además su propio frontend/.gitignore)
+node_modules/
+dist/
+
+# Configuración local y secretos (se conservan las plantillas .env.example)
+.env
+.env.*
+!.env.example
+!.env.*.example
+application-local.properties
+application-secrets.properties
+
+# IDE y sistema operativo
+.vscode/*
+!.vscode/extensions.json
+.project
+.classpath
+.settings/
+Thumbs.db
+Desktop.ini
