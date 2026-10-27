@@ -1,6 +1,7 @@
 package com.hellofriend.notificaciones;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -25,6 +26,7 @@ import com.hellofriend.notificaciones.infraestructura.NotificacionRepositorio;
 import com.hellofriend.usuarios.dominio.Rol;
 import com.hellofriend.usuarios.dominio.Usuario;
 import com.hellofriend.usuarios.infraestructura.UsuarioRepositorio;
+import com.jayway.jsonpath.JsonPath;
 
 /** La bandeja: cada persona ve y marca solo sus avisos, con cualquier rol y con token. */
 class NotificacionControladorIT extends PruebaIntegracion {
@@ -167,9 +169,97 @@ class NotificacionControladorIT extends PruebaIntegracion {
 
 		como(ana, patch("/notificaciones/leidas")).andExpect(status().isNoContent());
 
-		// La base guarda microsegundos; la copia en memoria de la primera lectura puede tener más decimales.
+		// MySQL guarda microsegundos y redondea; la copia en memoria de la primera lectura tiene más decimales.
 		assertThat(repositorio.findById(antigua.getId()).orElseThrow().getLeidaEn())
-				.isEqualTo(primera.truncatedTo(ChronoUnit.MICROS));
+				.isCloseTo(primera, within(1, ChronoUnit.MICROS));
+	}
+
+	// --- contador de no leídas
+
+	@Test
+	void elContadorSinTokenResponde401() throws Exception {
+		mvc.perform(get("/notificaciones/no-leidas")).andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void elContadorCuentaSoloMisNoLeidas() throws Exception {
+		como(ana, get("/notificaciones/no-leidas")).andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2));
+		como(luis, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(1));
+	}
+
+	@Test
+	void elContadorBajaAlMarcarUnaOTodas() throws Exception {
+		como(ana, patch("/notificaciones/" + antigua.getId() + "/leida")).andExpect(status().isNoContent());
+		como(ana, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(1));
+
+		como(ana, patch("/notificaciones/leidas")).andExpect(status().isNoContent());
+		como(ana, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(0));
+		como(luis, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(1));
+	}
+
+	@Test
+	void elContadorEsCeroSinAvisosYFuncionaConCualquierRol() throws Exception {
+		for (Rol rol : Rol.values()) {
+			String nombre = "c_" + rol.name().toLowerCase();
+			Usuario u = usuarios.saveAndFlush(
+					new Usuario(nombre + "@pucp.edu.pe", nombre.substring(0, 8), "hash", rol, INICIO));
+
+			como(u, get("/notificaciones/no-leidas")).andExpect(status().isOk())
+					.andExpect(jsonPath("$.total").value(0));
+		}
+	}
+
+	// --- marcar hasta una fecha (flujo del panel)
+
+	@Test
+	void marcarHastaUnaFechaSoloMarcaLasCreadasHastaEseMomento() throws Exception {
+		como(ana, patch("/notificaciones/leidas").param("hasta", "2026-10-02T10:00:00"))
+				.andExpect(status().isNoContent());
+
+		como(ana, get("/notificaciones")).andExpect(jsonPath("$[0].leida").value(false))
+				.andExpect(jsonPath("$[1].leida").value(true));
+		como(ana, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(1));
+	}
+
+	@Test
+	void loQueLlegaMientrasSeMiraElPanelNoSeMarcaComoLeido() throws Exception {
+		// 1. La persona abre el panel: ve dos avisos sin leer (los resaltaría).
+		como(ana, get("/notificaciones")).andExpect(jsonPath("$[0].leida").value(false))
+				.andExpect(jsonPath("$[1].leida").value(false));
+		// 2. Mientras mira, llega otro aviso.
+		aviso(ana, TipoNotificacion.EN_ATENCION, "En atención", "Tu incidencia está en atención.", INICIO.plusHours(5));
+		repositorio.flush();
+		// 3. Al terminar de mirar marca hasta el más nuevo que se le mostró (el de las 11:00).
+		como(ana, patch("/notificaciones/leidas").param("hasta", "2026-10-02T11:00:00"))
+				.andExpect(status().isNoContent());
+
+		// 4. El que llegó mientras miraba sigue sin leer y cuenta en la campanita.
+		como(ana, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(1));
+		como(ana, get("/notificaciones")).andExpect(jsonPath("$[0].titulo").value("En atención"))
+				.andExpect(jsonPath("$[0].leida").value(false)).andExpect(jsonPath("$[1].leida").value(true))
+				.andExpect(jsonPath("$[2].leida").value(true));
+	}
+
+	@Test
+	void laFechaQueDevuelveLaApiSirveTalCualComoHasta() throws Exception {
+		Notificacion conFraccion = aviso(ana, TipoNotificacion.REENVIADA, "Reenviada", "Fue reenviada.",
+				INICIO.plusHours(3).plusNanos(123_456_000));
+		repositorio.flush();
+		String cuerpo = como(ana, get("/notificaciones")).andReturn().getResponse().getContentAsString();
+		String fecha = JsonPath.read(cuerpo, "$[0].fecha");
+
+		como(ana, patch("/notificaciones/leidas").param("hasta", fecha)).andExpect(status().isNoContent());
+
+		assertThat(fecha).startsWith("2026-10-02T13:00:00.123456");
+		assertThat(repositorio.findById(conFraccion.getId()).orElseThrow().isLeida()).isTrue();
+		como(ana, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(0));
+	}
+
+	@Test
+	void unaFechaHastaInvalidaResponde400() throws Exception {
+		como(ana, patch("/notificaciones/leidas").param("hasta", "ayer")).andExpect(status().isBadRequest());
+
+		como(ana, get("/notificaciones/no-leidas")).andExpect(jsonPath("$.total").value(2));
 	}
 
 }

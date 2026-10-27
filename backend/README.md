@@ -88,8 +88,9 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | POST | `/admin/usuarios/{id}/desactivar` | ADMINISTRADOR | La cuenta queda `DESACTIVADA`, se cierran sus sesiones y el login responde 403; conserva su historial. 403 si es la propia cuenta; 404; 409 si ya está desactivada |
 | POST | `/admin/usuarios/{id}/reactivar` | ADMINISTRADOR | La cuenta vuelve a `ACTIVA`; las sesiones anteriores no reviven. No está en `docs/API.md`. 404; 409 si ya está activa |
 | GET | `/notificaciones` | autenticado | Mi bandeja `[{ id, incidenciaId, tipo, titulo, mensaje, leida, fecha }]`, las más nuevas primero. `tipo` y `titulo` son campos extra del contrato. Cada persona ve solo las suyas, con cualquier rol |
+| GET | `/notificaciones/no-leidas` | autenticado | `{ total }`: cuántas notificaciones sin leer tengo (el número de la campanita). Cuenta solo las mías; sin avisos devuelve 0 |
 | PATCH | `/notificaciones/{id}/leida` | autenticado | 204. Marcar dos veces no cambia la fecha. 404 si no existe **o es de otra persona** (no se revela cuál) |
-| PATCH | `/notificaciones/leidas` | autenticado | 204. Marca todas las mías |
+| PATCH | `/notificaciones/leidas[?hasta=]` | autenticado | 204. Marca mis no leídas. Con `?hasta=` (la `fecha` del aviso más nuevo que se mostró, tal cual la devuelve la API) solo las creadas hasta ese momento, para que lo que llegó mientras miraba el panel siga sin leer; sin él, todas. Una fecha inválida da 400 |
 | POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
 | GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
 | GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |

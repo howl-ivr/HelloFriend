@@ -31,6 +31,12 @@ public class ServicioNotificaciones {
 				.toList();
 	}
 
+	/** Cuántos avisos sin leer tiene la persona. */
+	@Transactional(readOnly = true)
+	public NoLeidasDto contarNoLeidas(String usuarioId) {
+		return new NoLeidasDto(repositorio.countByDestinatarioIdAndLeidaEnIsNull(usuarioId));
+	}
+
 	/** 404 si no existe o es de otra persona (no se revela cuál). Si ya estaba leída, no cambia nada. */
 	public void marcarLeida(String usuarioId, String notificacionId) {
 		repositorio.findByIdAndDestinatarioId(notificacionId, usuarioId)
@@ -38,8 +44,18 @@ public class ServicioNotificaciones {
 				.marcarLeida(ahora());
 	}
 
-	public void marcarTodasLeidas(String usuarioId) {
-		repositorio.marcarTodasLeidas(usuarioId, ahora());
+	/**
+	 * Marca como leídas las no leídas de la persona. Con {@code hasta} (la {@code fecha} del aviso más nuevo que vio en
+	 * el panel) solo marca las creadas hasta ese momento: lo que llegó mientras miraba sigue sin leer. Sin
+	 * {@code hasta}
+	 * marca todas.
+	 */
+	public void marcarTodasLeidas(String usuarioId, LocalDateTime hasta) {
+		if (hasta == null) {
+			repositorio.marcarTodasLeidas(usuarioId, ahora());
+		} else {
+			repositorio.marcarLeidasHasta(usuarioId, ahora(), hasta);
+		}
 	}
 
 	private LocalDateTime ahora() {

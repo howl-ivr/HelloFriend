@@ -19,9 +19,24 @@ public interface NotificacionRepositorio extends JpaRepository<Notificacion, Str
 	/** Solo si es de esa persona: una ajena se trata como inexistente. */
 	Optional<Notificacion> findByIdAndDestinatarioId(String id, String destinatarioId);
 
+	/** Cuántas no leídas tiene una persona (el número de la campanita). */
+	long countByDestinatarioIdAndLeidaEnIsNull(String destinatarioId);
+
 	/** Marca de una vez todas las no leídas de una persona; devuelve cuántas cambió. */
 	@Modifying(flushAutomatically = true, clearAutomatically = true)
 	@Query("update Notificacion n set n.leidaEn = :ahora where n.destinatarioId = :destinatarioId and n.leidaEn is null")
 	int marcarTodasLeidas(@Param("destinatarioId") String destinatarioId, @Param("ahora") LocalDateTime ahora);
+
+	/**
+	 * Marca las no leídas creadas hasta {@code hasta} (inclusive). Las que llegaron después, por ejemplo mientras la
+	 * persona miraba el panel, siguen sin leer.
+	 */
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("""
+			update Notificacion n set n.leidaEn = :ahora
+			where n.destinatarioId = :destinatarioId and n.leidaEn is null and n.creadaEn <= :hasta
+			""")
+	int marcarLeidasHasta(@Param("destinatarioId") String destinatarioId, @Param("ahora") LocalDateTime ahora,
+			@Param("hasta") LocalDateTime hasta);
 
 }
