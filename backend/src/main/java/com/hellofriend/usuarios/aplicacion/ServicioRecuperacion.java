@@ -59,7 +59,7 @@ public class ServicioRecuperacion {
 		Usuario usuario = repositorio.findByTokenRecuperacionHash(TokenRecuperacion.hash(token.strip()))
 				.filter(Usuario::puedeIniciarSesion).filter(u -> u.recuperacionVigenteEn(ahora()))
 				.orElseThrow(() -> ExcepcionNegocio.invalido(ENLACE_INVALIDO));
-		usuario.restablecerContrasena(contrasenas.encode(contrasenaNueva));
+		usuario.cambiarContrasena(contrasenas.encode(contrasenaNueva));
 	}
 
 	private LocalDateTime ahora() {

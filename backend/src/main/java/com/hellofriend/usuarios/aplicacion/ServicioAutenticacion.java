@@ -50,6 +50,26 @@ public class ServicioAutenticacion {
 		return PerfilDto.de(buscar(usuarioId));
 	}
 
+	/**
+	 * Cambia la contraseña del usuario autenticado. Cierra todas sus sesiones (también las de otros dispositivos) y
+	 * devuelve un token nuevo para que quien la cambió siga dentro. Una contraseña actual incorrecta responde 400, no
+	 * 401, para que el frontend no lo confunda con una sesión vencida.
+	 */
+	public RespuestaLogin cambiarContrasena(String usuarioId, SolicitudCambioContrasena solicitud) {
+		Usuario usuario = buscar(usuarioId);
+		if (!contrasenas.matches(solicitud.contrasenaActual(), usuario.getContrasenaHash())) {
+			throw ExcepcionNegocio.invalido("La contraseña actual es incorrecta.");
+		}
+		if (solicitud.contrasenaActual().equals(solicitud.contrasenaNueva())) {
+			throw ExcepcionNegocio.invalido("La nueva contraseña debe ser distinta de la actual.");
+		}
+		ReglasContrasena.exigirLargoSoportado(solicitud.contrasenaNueva());
+		usuario.cambiarContrasena(contrasenas.encode(solicitud.contrasenaNueva()));
+		String token = jwt.emitir(usuario.getId(), usuario.getUsuario(), usuario.getRol().name(),
+				usuario.getVersionSesion());
+		return new RespuestaLogin(token, usuario.getUsuario(), usuario.getRol());
+	}
+
 	/** Suma 1 a la versión de sesión: todos los tokens emitidos hasta ahora dejan de valer. */
 	public void cerrarSesion(String usuarioId) {
 		buscar(usuarioId).cerrarSesion();

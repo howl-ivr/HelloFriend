@@ -103,8 +103,11 @@ public class Usuario {
 				&& tokenRecuperacionExpiraEn.isAfter(ahora);
 	}
 
-	/** Cambia la contraseña, consume el enlace (un solo uso) y cierra todas las sesiones abiertas. */
-	public void restablecerContrasena(String nuevoHash) {
+	/**
+	 * Cambia la contraseña, consume cualquier enlace de recuperación pendiente y cierra todas las sesiones abiertas (el
+	 * llamador que quiera mantener una debe emitir un token nuevo con la versión resultante).
+	 */
+	public void cambiarContrasena(String nuevoHash) {
 		contrasenaHash = nuevoHash;
 		tokenRecuperacionHash = null;
 		tokenRecuperacionExpiraEn = null;

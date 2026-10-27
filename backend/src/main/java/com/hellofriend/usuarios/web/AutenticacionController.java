@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -19,6 +20,7 @@ import com.hellofriend.usuarios.aplicacion.RespuestaLogin;
 import com.hellofriend.usuarios.aplicacion.ServicioAutenticacion;
 import com.hellofriend.usuarios.aplicacion.ServicioRecuperacion;
 import com.hellofriend.usuarios.aplicacion.ServicioRegistro;
+import com.hellofriend.usuarios.aplicacion.SolicitudCambioContrasena;
 import com.hellofriend.usuarios.aplicacion.SolicitudLogin;
 import com.hellofriend.usuarios.aplicacion.SolicitudRecuperacion;
 import com.hellofriend.usuarios.aplicacion.SolicitudRegistro;
@@ -76,6 +78,16 @@ public class AutenticacionController {
 	@GetMapping("/me")
 	public PerfilDto yo(Authentication autenticacion) {
 		return servicio.perfil(ServicioJwt.usuarioActual(autenticacion));
+	}
+
+	/**
+	 * PUT /auth/me/contrasena {contrasenaActual, contrasenaNueva} → {token, usuario, rol}. Cierra las demás sesiones y
+	 * devuelve un token nuevo; 400 si la actual es incorrecta o la nueva no cumple.
+	 */
+	@PutMapping("/me/contrasena")
+	public RespuestaLogin cambiarContrasena(Authentication autenticacion,
+			@Valid @RequestBody SolicitudCambioContrasena solicitud) {
+		return servicio.cambiarContrasena(ServicioJwt.usuarioActual(autenticacion), solicitud);
 	}
 
 	/** Invalida todos los tokens del usuario (suma 1 a version_sesion). */
