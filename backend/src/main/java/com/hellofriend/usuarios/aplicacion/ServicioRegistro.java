@@ -1,6 +1,5 @@
 package com.hellofriend.usuarios.aplicacion;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -20,9 +19,6 @@ import com.hellofriend.usuarios.infraestructura.UsuarioRepositorio;
 @Transactional
 public class ServicioRegistro {
 
-	/** BCrypt solo mira los primeros 72 bytes de la contraseña. */
-	private static final int MAX_BYTES_CONTRASENA = 72;
-
 	private final UsuarioRepositorio repositorio;
 	private final PasswordEncoder contrasenas;
 	private final Clock reloj;
@@ -36,9 +32,7 @@ public class ServicioRegistro {
 	public void registrar(SolicitudRegistro solicitud) {
 		String correo = solicitud.correo().strip().toLowerCase(Locale.ROOT);
 		String usuario = solicitud.usuario().strip();
-		if (solicitud.password().getBytes(StandardCharsets.UTF_8).length > MAX_BYTES_CONTRASENA) {
-			throw ExcepcionNegocio.invalido("La contraseña es demasiado larga.");
-		}
+		ReglasContrasena.exigirLargoSoportado(solicitud.password());
 		if (repositorio.existsByUsuario(usuario)) {
 			throw ExcepcionNegocio.conflicto("Ese usuario ya está en uso.");
 		}

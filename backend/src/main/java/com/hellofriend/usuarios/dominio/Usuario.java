@@ -49,6 +49,14 @@ public class Usuario {
 	@Column(name = "version_sesion", nullable = false)
 	private int versionSesion;
 
+	/** SHA-256 del enlace de recuperación vigente (nunca el token en claro); null si no hay ninguno. */
+	@Column(name = "token_recuperacion_hash", length = 100)
+	private String tokenRecuperacionHash;
+
+	/** Vencimiento del enlace de recuperación, en UTC. */
+	@Column(name = "token_recuperacion_expira_en")
+	private LocalDateTime tokenRecuperacionExpiraEn;
+
 	/** Fecha de creación en UTC. */
 	@Column(name = "creado_en", nullable = false, updatable = false)
 	private LocalDateTime creadoEn;
@@ -82,6 +90,25 @@ public class Usuario {
 
 	public void rechazar() {
 		estado = EstadoCuenta.RECHAZADA;
+	}
+
+	/** Guarda el enlace de recuperación. Pedir otro sobrescribe el anterior, que deja de valer. */
+	public void iniciarRecuperacion(String hashToken, LocalDateTime expiraEn) {
+		tokenRecuperacionHash = hashToken;
+		tokenRecuperacionExpiraEn = expiraEn;
+	}
+
+	public boolean recuperacionVigenteEn(LocalDateTime ahora) {
+		return tokenRecuperacionHash != null && tokenRecuperacionExpiraEn != null
+				&& tokenRecuperacionExpiraEn.isAfter(ahora);
+	}
+
+	/** Cambia la contraseña, consume el enlace (un solo uso) y cierra todas las sesiones abiertas. */
+	public void restablecerContrasena(String nuevoHash) {
+		contrasenaHash = nuevoHash;
+		tokenRecuperacionHash = null;
+		tokenRecuperacionExpiraEn = null;
+		cerrarSesion();
 	}
 
 	/** Invalida todos los tokens emitidos hasta ahora. */
@@ -129,6 +156,14 @@ public class Usuario {
 
 	public boolean isActivo() {
 		return activo;
+	}
+
+	public String getTokenRecuperacionHash() {
+		return tokenRecuperacionHash;
+	}
+
+	public LocalDateTime getTokenRecuperacionExpiraEn() {
+		return tokenRecuperacionExpiraEn;
 	}
 
 	public int getVersionSesion() {

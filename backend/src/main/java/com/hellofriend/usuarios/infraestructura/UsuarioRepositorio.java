@@ -16,6 +16,8 @@ public interface UsuarioRepositorio extends JpaRepository<Usuario, String> {
 
 	Optional<Usuario> findByUsuario(String usuario);
 
+	Optional<Usuario> findByTokenRecuperacionHash(String tokenRecuperacionHash);
+
 	List<Usuario> findByRolOrderByCreadoEnAsc(Rol rol);
 
 	List<Usuario> findByRolAndEstadoOrderByCreadoEnAsc(Rol rol, EstadoCuenta estado);

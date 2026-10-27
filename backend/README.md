@@ -74,6 +74,8 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | GET | `/actuator/health` | público | Estado de la aplicación |
 | POST | `/auth/registro` | público | `{ correo, usuario, password }` → 201 `{ mensaje }`. La cuenta queda `PENDIENTE` como ESTUDIANTE. 400 si el correo no es `@pucp.edu.pe`, el usuario no cumple `^[a-zA-Z0-9._-]{3,15}$` o la contraseña no tiene de 6 a 64 caracteres; 409 si el usuario o el correo ya existen |
 | POST | `/auth/login` | público | `{ usuario, password }` → `{ token, usuario, rol }`. 401 si las credenciales fallan (mismo mensaje exista o no el usuario); 403 si la cuenta está `PENDIENTE`, `RECHAZADA` o desactivada |
+| POST | `/auth/recuperar` | público | `{ correo }` → 200 `{ mensaje }` siempre, exista o no el correo. Si es de una cuenta que puede entrar, envía un enlace `FRONTEND_URL/restablecer?token=...` (vence en `RECUPERACION_MINUTOS`, 30 por defecto). Pedir otro invalida el anterior |
+| POST | `/auth/restablecer` | público | `{ token, password }` → 200 `{ mensaje }`. Cambia la contraseña, consume el enlace (un solo uso) y cierra todas las sesiones. 400 si el enlace es desconocido, vencido o usado (mismo mensaje) o si la contraseña no tiene de 6 a 64 caracteres |
 | GET | `/auth/me` | autenticado | `{ usuario, rol }` del token; nunca devuelve el correo |
 | POST | `/auth/logout` | autenticado | 204; suma 1 a `version_sesion`, así que todos los tokens anteriores dejan de valer |
 | GET | `/admin/usuarios` | ADMINISTRADOR | Estudiantes `[{ id, usuario, rol, estado, fechaRegistro }]`, los más antiguos primero, sin correo. Con `?estado=PENDIENTE\|ACTIVA\|RECHAZADA` filtra; otro valor da 400 |

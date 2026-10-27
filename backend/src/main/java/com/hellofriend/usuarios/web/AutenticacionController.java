@@ -17,21 +17,30 @@ import com.hellofriend.compartido.seguridad.ServicioJwt;
 import com.hellofriend.usuarios.aplicacion.PerfilDto;
 import com.hellofriend.usuarios.aplicacion.RespuestaLogin;
 import com.hellofriend.usuarios.aplicacion.ServicioAutenticacion;
+import com.hellofriend.usuarios.aplicacion.ServicioRecuperacion;
 import com.hellofriend.usuarios.aplicacion.ServicioRegistro;
 import com.hellofriend.usuarios.aplicacion.SolicitudLogin;
+import com.hellofriend.usuarios.aplicacion.SolicitudRecuperacion;
 import com.hellofriend.usuarios.aplicacion.SolicitudRegistro;
+import com.hellofriend.usuarios.aplicacion.SolicitudRestablecer;
 
-/** Registro y login (públicos, contrato de docs/API.md), quién soy y cerrar sesión (requieren token). */
+/**
+ * Registro, login y recuperación de contraseña (públicos), quién soy y cerrar sesión (requieren token). Registro y
+ * login siguen docs/API.md; la recuperación no está en ese contrato todavía.
+ */
 @RestController
 @RequestMapping("/auth")
 public class AutenticacionController {
 
 	private final ServicioAutenticacion servicio;
 	private final ServicioRegistro registro;
+	private final ServicioRecuperacion recuperacion;
 
-	public AutenticacionController(ServicioAutenticacion servicio, ServicioRegistro registro) {
+	public AutenticacionController(ServicioAutenticacion servicio, ServicioRegistro registro,
+			ServicioRecuperacion recuperacion) {
 		this.servicio = servicio;
 		this.registro = registro;
+		this.recuperacion = recuperacion;
 	}
 
 	/** POST /auth/registro {correo, usuario, password} → 201 {mensaje}. La cuenta queda PENDIENTE. */
@@ -46,6 +55,22 @@ public class AutenticacionController {
 	@PostMapping("/login")
 	public RespuestaLogin login(@Valid @RequestBody SolicitudLogin solicitud) {
 		return servicio.iniciarSesion(solicitud);
+	}
+
+	/** POST /auth/recuperar {correo} → 200 {mensaje}, exista o no el correo. Si existe, envía el enlace. */
+	@PostMapping("/recuperar")
+	public Map<String, String> recuperar(@Valid @RequestBody SolicitudRecuperacion solicitud) {
+		recuperacion.solicitar(solicitud.correo());
+		return Map.of("mensaje", "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.");
+	}
+
+	/**
+	 * POST /auth/restablecer {token, password} → 200 {mensaje}. 400 si el enlace no sirve o la contraseña no cumple.
+	 */
+	@PostMapping("/restablecer")
+	public Map<String, String> restablecer(@Valid @RequestBody SolicitudRestablecer solicitud) {
+		recuperacion.restablecer(solicitud.token(), solicitud.password());
+		return Map.of("mensaje", "Tu contraseña fue actualizada. Ya puedes iniciar sesión.");
 	}
 
 	@GetMapping("/me")
