@@ -37,7 +37,8 @@ La configuración ya está lista para esto: el backend lee todo de variables de 
 - **Secretos en GitHub** (Settings → Secrets and variables → Actions): `SERVIDOR_HOST`, `SERVIDOR_USUARIO`,
   `SERVIDOR_CLAVE_SSH`.
 - **`deploy/.env` en el servidor** (no está en el repo): `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`,
-  `CORS_ORIGINS`, `MAIL_*` y `FLYWAY_LOCATIONS` si aplica.
+  `CORS_ORIGINS`, `MAIL_*` y `FLYWAY_LOCATIONS` si aplica. `JWT_SECRET` es obligatorio: con una base que no sea local, la
+  aplicación no arranca si falta (ver `2026-10-27-usuarios-y-seguridad.md`).
 - **Frontend:** cómo se sirve (otro servidor, S3 u otro) y su job de CI quedan por definir con la pareja del frontend.
 
 ## Por reevaluar
