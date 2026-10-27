@@ -46,6 +46,7 @@ export default function AdminCuentas() {
 
   const cambiarRol = (cuenta, nuevo) => ejecutar(cuenta, () => api.put(`/admin/usuarios/${cuenta.id}/rol`, { rol: nuevo }))
   const desactivar = cuenta => ejecutar(cuenta, () => api.post(`/admin/usuarios/${cuenta.id}/desactivar`))
+  const reactivar = cuenta => ejecutar(cuenta, () => api.post(`/admin/usuarios/${cuenta.id}/reactivar`))
 
   const cargando = resultado.clave !== clave
 
@@ -111,8 +112,10 @@ export default function AdminCuentas() {
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap text-suave">{fechaHora(c.fechaRegistro)}</td>
                     <td className="px-4 py-2 text-right whitespace-nowrap">
-                      {esYo || !activa ? (
+                      {esYo ? (
                         <span className="text-suave">—</span>
+                      ) : !activa ? (
+                        <button onClick={() => reactivar(c)} disabled={enviando === c.id} className={claseBotonSecundario}>Reactivar</button>
                       ) : confirmando === c.id ? (
                         <span className="inline-flex gap-2">
                           <button onClick={() => desactivar(c)} disabled={enviando === c.id} className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-full px-4 py-2 text-sm font-medium">

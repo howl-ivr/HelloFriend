@@ -22,7 +22,7 @@ export default function Comentarios({ incidencia }) {
     if (!elegido) return
     setError('')
     try {
-      const { data } = await api.post(`/incidencias/${incidencia.id}/comentarios`, { comentarioPredefinidoId: Number(elegido) })
+      const { data } = await api.post(`/incidencias/${incidencia.id}/comentarios`, { comentarioPredefinidoId: elegido })
       setComentarios(c => [...c, data])
       setElegido('')
     } catch (err) {

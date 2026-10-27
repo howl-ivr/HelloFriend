@@ -1,17 +1,8 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { MODO_MOCK, mensajeError } from '../api/client'
+import { mensajeError } from '../api/client'
 import { Alerta, claseBoton, claseInput } from '../components/ui'
-
-const CUENTAS_DEMO = [
-  ['alumno1', 'alumno123', 'Estudiante'],
-  ['alumno2', 'alumno123', 'Estudiante'],
-  ['profesor', 'profesor123', 'Profesor'],
-  ['director', 'director123', 'Director de carrera'],
-  ['admin', 'admin123', 'Administrador'],
-  ['exalumno', 'alumno123', 'Cuenta desactivada (no puede ingresar)']
-]
 
 export default function Login() {
   const { token, login } = useAuth()
@@ -83,25 +74,6 @@ export default function Login() {
         </p>
       </div>
 
-      {MODO_MOCK && (
-        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900">
-          <p className="font-semibold mb-2">Cuentas de demostración</p>
-          <ul className="space-y-1">
-            {CUENTAS_DEMO.map(([u, p, desc]) => (
-              <li key={u}>
-                <button
-                  type="button"
-                  onClick={() => { setUsuario(u); setPassword(p) }}
-                  className="font-mono hover:underline"
-                >
-                  {u} / {p}
-                </button>{' '}
-                — {desc}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   )
 }

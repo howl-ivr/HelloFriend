@@ -17,7 +17,11 @@ export default function AdminReporte() {
   if (error) return <Alerta>{error}</Alerta>
   if (!r) return <Cargando />
 
-  const confirmantes = r.eventos.filter(e => e.tipo === 'CONFIRMADA').map(e => e.responsable)
+  const confirmantes = [...r.eventos.reduce((actuales, evento) => {
+    if (evento.tipo === 'CONFIRMADA') actuales.add(evento.responsable)
+    if (evento.tipo === 'CONFIRMACION_RETIRADA') actuales.delete(evento.responsable)
+    return actuales
+  }, new Set())]
 
   return (
     <div>

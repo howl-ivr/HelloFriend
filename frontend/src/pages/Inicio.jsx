@@ -13,7 +13,7 @@ export default function Inicio() {
   const { rol } = useAuth()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
-  const canalId = params.get('canal') ? Number(params.get('canal')) : null
+  const canalId = params.get('canal') || null
 
   const [todos, setTodos] = useState(null)
   const [errorCanales, setErrorCanales] = useState('')

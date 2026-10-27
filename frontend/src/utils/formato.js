@@ -31,7 +31,8 @@ export const EVENTOS = {
   RECHAZADA: 'Rechazada',
   EN_ATENCION: 'Pasó a en atención',
   RESUELTA: 'Resuelta',
-  CONFIRMADA: 'Confirmada por un estudiante'
+  CONFIRMADA: 'Confirmada por un estudiante',
+  CONFIRMACION_RETIRADA: 'Confirmación retirada por un estudiante'
 }
 
 export const PRIORIDADES = {
@@ -51,7 +52,7 @@ export const ROLES = {
   ESTUDIANTE: 'Estudiante',
   PROFESOR: 'Profesor',
   DIRECTOR: 'Director de carrera',
-  ADMIN: 'Administrador'
+  ADMINISTRADOR: 'Administrador'
 }
 
 const TONOS = [
@@ -64,7 +65,8 @@ const TONOS = [
 ]
 
 export function tonoCanal(id) {
-  return TONOS[(Number(id) || 0) % TONOS.length]
+  const valor = String(id ?? '').split('').reduce((n, c) => n + c.charCodeAt(0), 0)
+  return TONOS[valor % TONOS.length]
 }
 
 // "INF263 · Algoritmia" → { codigo: "INF263", nombre: "Algoritmia" }

@@ -1,11 +1,17 @@
 package com.hellofriend.usuarios.web;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,9 +34,13 @@ import com.hellofriend.usuarios.dominio.Rol;
 public class AdminUsuarioController {
 
 	private final ServicioUsuarios servicio;
+	private final JdbcTemplate jdbc;
+	private final Clock reloj;
 
-	public AdminUsuarioController(ServicioUsuarios servicio) {
+	public AdminUsuarioController(ServicioUsuarios servicio, JdbcTemplate jdbc, Clock reloj) {
 		this.servicio = servicio;
+		this.jdbc = jdbc;
+		this.reloj = reloj;
 	}
 
 	/**
@@ -45,21 +55,37 @@ public class AdminUsuarioController {
 
 	/** PUT /admin/usuarios/{id}/rol {rol}. Cierra las sesiones de ese usuario. 403 si es el propio. */
 	@PutMapping("/{id}/rol")
+	@Transactional
 	public UsuarioResumenDto cambiarRol(@PathVariable String id, @Valid @RequestBody SolicitudCambioRol solicitud,
 			Authentication autenticacion) {
-		return servicio.cambiarRol(id, solicitud.rol(), ServicioJwt.usuarioActual(autenticacion));
+		UsuarioResumenDto usuario = servicio.cambiarRol(id, solicitud.rol(), ServicioJwt.usuarioActual(autenticacion));
+		auditar("ROL_ASIGNADO", ServicioJwt.usuarioActual(autenticacion), id);
+		return usuario;
 	}
 
 	/** Deja la cuenta sin acceso y cierra sus sesiones. 403 si es la propia; 409 si ya está desactivada. */
 	@PostMapping("/{id}/desactivar")
+	@Transactional
 	public UsuarioResumenDto desactivar(@PathVariable String id, Authentication autenticacion) {
-		return servicio.desactivar(id, ServicioJwt.usuarioActual(autenticacion));
+		UsuarioResumenDto usuario = servicio.desactivar(id, ServicioJwt.usuarioActual(autenticacion));
+		auditar("CUENTA_DESACTIVADA", ServicioJwt.usuarioActual(autenticacion), id);
+		return usuario;
 	}
 
 	/** Devuelve el acceso a una cuenta desactivada. Las sesiones anteriores no reviven: hay que iniciar sesión. */
 	@PostMapping("/{id}/reactivar")
-	public UsuarioResumenDto reactivar(@PathVariable String id) {
-		return servicio.reactivar(id);
+	@Transactional
+	public UsuarioResumenDto reactivar(@PathVariable String id, Authentication autenticacion) {
+		UsuarioResumenDto usuario = servicio.reactivar(id);
+		auditar("CUENTA_REACTIVADA", ServicioJwt.usuarioActual(autenticacion), id);
+		return usuario;
+	}
+
+	private void auditar(String accion, String actor, String detalle) {
+		Long valido = jdbc.queryForObject("SELECT COUNT(*) FROM usuarios_usuario WHERE id=?", Long.class, actor);
+		jdbc.update("INSERT INTO auditoria_evento (id, accion, actor_id, detalle, fecha) VALUES (?, ?, ?, ?, ?)",
+				UUID.randomUUID().toString(), accion, valido != null && valido > 0 ? actor : null, detalle,
+				LocalDateTime.ofInstant(reloj.instant(), ZoneOffset.UTC));
 	}
 
 }

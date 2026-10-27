@@ -1,11 +1,6 @@
 import axios from 'axios'
-import { mockAdapter } from './mock'
-
-export const MODO_MOCK = import.meta.env.VITE_MOCK === 'true'
 
 const api = axios.create({ baseURL: '/api' })
-
-if (MODO_MOCK) api.defaults.adapter = mockAdapter
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')

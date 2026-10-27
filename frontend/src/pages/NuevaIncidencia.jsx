@@ -26,7 +26,7 @@ export default function NuevaIncidencia() {
     setError('')
     setEnviando(true)
     try {
-      await api.post('/incidencias', { canalId: Number(canalElegido), categoria, titulo: titulo.trim(), descripcion: descripcion.trim() })
+      await api.post('/incidencias', { canalId: canalElegido, categoria, titulo: titulo.trim(), descripcion: descripcion.trim() })
       setEnviada(true)
     } catch (err) {
       setError(mensajeError(err))

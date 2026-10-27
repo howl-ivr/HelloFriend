@@ -7,6 +7,7 @@ import { ESTADOS, fechaHora } from '../utils/formato'
 const ACCIONES = {
   CUENTA_REGISTRADA: 'Cuenta registrada',
   CUENTA_DESACTIVADA: 'Cuenta desactivada',
+  CUENTA_REACTIVADA: 'Cuenta reactivada',
   ROL_ASIGNADO: 'Rol asignado',
   CURSO_REGISTRADO: 'Curso registrado',
   CANAL_CREADO: 'Canal creado',
@@ -18,7 +19,9 @@ const ACCIONES = {
   INCIDENCIA_APROBADA: 'Incidencia aprobada',
   INCIDENCIA_RECHAZADA: 'Incidencia rechazada',
   INCIDENCIA_EN_ATENCION: 'Incidencia en atención',
-  INCIDENCIA_RESUELTA: 'Incidencia resuelta'
+  INCIDENCIA_RESUELTA: 'Incidencia resuelta',
+  INCIDENCIA_CONFIRMADA: 'Incidencia confirmada',
+  INCIDENCIA_CONFIRMACION_RETIRADA: 'Confirmación retirada'
 }
 
 const FILTROS_VACIOS = { desde: '', hasta: '', cursoId: '', estado: '', usuario: '' }

@@ -14,27 +14,9 @@ npm run dev
 
 La app queda en http://localhost:5173.
 
-## Modo demostración y modo backend
+## Backend y datos
 
-El archivo `.env.development` define `VITE_MOCK`:
-
-- `VITE_MOCK=true`: los datos se simulan en el navegador (se guardan en localStorage). No hace falta backend.
-- `VITE_MOCK=false`: las llamadas a `/api` van al backend Spring Boot en http://localhost:8080 (ver `vite.config.js`).
-
-El contrato que debe respetar el backend está en `../docs/API.md`.
-
-Cuentas del modo demostración:
-
-| Usuario | Contraseña | Rol |
-|---|---|---|
-| alumno1 a alumno5 | alumno123 | Estudiante |
-| cachimbo26 | nuevo123 | Estudiante recién registrado |
-| profesor | profesor123 | Profesor |
-| director | director123 | Director de carrera |
-| admin | admin123 | Administrador |
-| exalumno | alumno123 | Cuenta desactivada (no puede ingresar) |
-
-Para reiniciar los datos simulados: `localStorage.removeItem('hf_mock_db_v3')` en la consola del navegador.
+Todas las llamadas a `/api` van al backend Spring Boot. Durante el desarrollo, Vite las dirige a `http://localhost:8080` mediante `vite.config.js`. Los cursos, canales, incidencias, interacciones, notificaciones y usuarios se leen de MySQL a través del backend; `localStorage` solo guarda el token de sesión. El contrato está en `../docs/API.md`.
 
 ## Scripts
 
@@ -49,7 +31,7 @@ Para reiniciar los datos simulados: `localStorage.removeItem('hf_mock_db_v3')` e
 
 ```
 src/
-  api/         cliente axios (client.js) y backend simulado (mock.js)
+  api/         cliente axios para el backend
   components/  piezas reutilizables (tarjetas, botones, navbar, paneles)
   context/     sesión del usuario (AuthContext)
   pages/       una pantalla por ruta, agrupadas por rol

@@ -1,11 +1,17 @@
 package com.hellofriend.usuarios.web;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
+import java.util.UUID;
 
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -37,19 +43,29 @@ public class AutenticacionController {
 	private final ServicioAutenticacion servicio;
 	private final ServicioRegistro registro;
 	private final ServicioRecuperacion recuperacion;
+	private final JdbcTemplate jdbc;
+	private final Clock reloj;
 
 	public AutenticacionController(ServicioAutenticacion servicio, ServicioRegistro registro,
-			ServicioRecuperacion recuperacion) {
+			ServicioRecuperacion recuperacion, JdbcTemplate jdbc, Clock reloj) {
 		this.servicio = servicio;
 		this.registro = registro;
 		this.recuperacion = recuperacion;
+		this.jdbc = jdbc;
+		this.reloj = reloj;
 	}
 
 	/** POST /auth/registro {correo, usuario, password} → 201 {mensaje}. La cuenta queda activa como ESTUDIANTE. */
 	@PostMapping("/registro")
 	@ResponseStatus(HttpStatus.CREATED)
+	@Transactional
 	public Map<String, String> registrar(@Valid @RequestBody SolicitudRegistro solicitud) {
 		registro.registrar(solicitud);
+		String id = jdbc.queryForObject("SELECT id FROM usuarios_usuario WHERE usuario=?", String.class,
+				solicitud.usuario().strip());
+		jdbc.update("INSERT INTO auditoria_evento (id, accion, actor_id, detalle, fecha) VALUES (?, ?, ?, ?, ?)",
+				UUID.randomUUID().toString(), "CUENTA_REGISTRADA", id, null,
+				LocalDateTime.ofInstant(reloj.instant(), ZoneOffset.UTC));
 		return Map.of("mensaje", "Tu cuenta fue creada. Ya puedes iniciar sesión.");
 	}
 

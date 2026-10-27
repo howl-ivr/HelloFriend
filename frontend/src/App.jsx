@@ -24,7 +24,7 @@ const INICIO = {
   ESTUDIANTE: '/inicio',
   PROFESOR: '/inicio',
   DIRECTOR: '/director/pendientes',
-  ADMIN: '/admin/cuentas'
+  ADMINISTRADOR: '/admin/cuentas'
 }
 
 function Raiz() {
@@ -64,10 +64,10 @@ export default function App() {
               <Route path="/director/publicadas" element={<P roles={['DIRECTOR']}><DirectorPublicadas /></P>} />
               <Route path="/director/estadisticas" element={<P roles={['DIRECTOR']}><DirectorEstadisticas /></P>} />
 
-              <Route path="/admin/cuentas" element={<P roles={['ADMIN']} ancho><AdminCuentas /></P>} />
-              <Route path="/admin/canales" element={<P roles={['ADMIN']} ancho><AdminCanales /></P>} />
-              <Route path="/admin/auditoria" element={<P roles={['ADMIN']} ancho><AdminAuditoria /></P>} />
-              <Route path="/admin/auditoria/:id" element={<P roles={['ADMIN']}><AdminReporte /></P>} />
+              <Route path="/admin/cuentas" element={<P roles={['ADMINISTRADOR']} ancho><AdminCuentas /></P>} />
+              <Route path="/admin/canales" element={<P roles={['ADMINISTRADOR']} ancho><AdminCanales /></P>} />
+              <Route path="/admin/auditoria" element={<P roles={['ADMINISTRADOR']} ancho><AdminAuditoria /></P>} />
+              <Route path="/admin/auditoria/:id" element={<P roles={['ADMINISTRADOR']}><AdminReporte /></P>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

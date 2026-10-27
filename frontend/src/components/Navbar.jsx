@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import api, { MODO_MOCK } from '../api/client'
+import api from '../api/client'
 import { ROLES } from '../utils/formato'
 import { AvatarAnonimo } from './ui'
 
@@ -16,7 +16,7 @@ const ENLACES = {
     { to: '/director/publicadas', texto: 'Publicadas' },
     { to: '/director/estadisticas', texto: 'Estadísticas' }
   ],
-  ADMIN: [
+  ADMINISTRADOR: [
     { to: '/admin/cuentas', texto: 'Usuarios' },
     { to: '/admin/canales', texto: 'Canales' },
     { to: '/admin/auditoria', texto: 'Auditoría' }
@@ -30,7 +30,7 @@ export default function Navbar() {
   const [noLeidas, setNoLeidas] = useState(0)
 
   useEffect(() => {
-    if (!token || rol === 'ADMIN') return
+    if (!token || rol === 'ADMINISTRADOR') return
     api.get('/notificaciones')
       .then(r => setNoLeidas(r.data.filter(n => !n.leida).length))
       .catch(() => {})
@@ -38,8 +38,8 @@ export default function Navbar() {
 
   if (!token) return null
 
-  const salir = () => {
-    logout()
+  const salir = async () => {
+    try { await logout() } catch { /* La sesión local se elimina incluso sin conexión. */ }
     navigate('/login')
   }
 
@@ -48,9 +48,6 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-linea">
-      {MODO_MOCK && (
-        <p className="bg-amber-100 text-amber-900 text-xs text-center py-0.5">Modo demostración: los datos se simulan en este navegador</p>
-      )}
       <nav className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-4">
         <Link to="/" className="font-logo font-bold text-lg tracking-tight">
           hello_friend<span className="cursor-terminal">▍</span>
@@ -63,7 +60,7 @@ export default function Navbar() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          {rol !== 'ADMIN' && (
+          {rol !== 'ADMINISTRADOR' && (
             <Link to="/notificaciones" className="relative h-9 w-9 rounded-full grid place-items-center hover:bg-fondo" aria-label={`Notificaciones${noLeidas ? `, ${noLeidas} sin leer` : ''}`}>
               <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2 text-suave" aria-hidden="true">
                 <path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 20a1.9 1.9 0 0 0 3.4 0" strokeLinecap="round" strokeLinejoin="round" />

@@ -120,7 +120,7 @@ export default function AccionesDirector({ incidencia, onHecho }) {
         />
         <div className="flex gap-2">
           <button
-            onClick={() => ejecutar('rechazar', { motivoId: motivoId ? Number(motivoId) : null, comentario })}
+            onClick={() => ejecutar('rechazar', { motivoId: motivoId || null, comentario })}
             disabled={!valido || enviando}
             className={botonRojo}
           >

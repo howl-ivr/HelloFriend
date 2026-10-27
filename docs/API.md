@@ -2,8 +2,7 @@
 
 Base: `/api` · JSON · Autenticación con `Authorization: Bearer <JWT>` (excepto `/api/auth/registro`, `/login`, `/recuperar` y `/restablecer`).
 
-El frontend ya implementa este contrato en modo simulado (`frontend/src/api/mock.js`). Si el backend respeta
-rutas, campos y códigos de estado, basta con poner `VITE_MOCK=false` en `frontend/.env.development`.
+El frontend consume este contrato directamente desde Spring Boot. Los identificadores de usuarios, cursos, canales e incidencias son UUID en formato texto.
 
 Esta versión sigue el documento de Requerimientos v3.
 
@@ -12,12 +11,12 @@ Esta versión sigue el documento de Requerimientos v3.
 - **Registro libre:** cualquier correo `@pucp.edu.pe` crea una cuenta `ACTIVA` con rol `ESTUDIANTE`; no hay aprobación del administrador (RF-01.4).
   El administrador puede asignar otro rol o desactivar la cuenta. Una cuenta desactivada no inicia sesión y conserva su historial.
 - **Anonimato:** ni los estudiantes ni los profesores reciben jamás el autor de una incidencia ni quién la confirmó.
-  El campo `autor` solo llega al `DIRECTOR` y al `ADMIN`; las confirmaciones con identidad solo las ve el `ADMIN` (auditoría).
+  El campo `autor` solo llega al `DIRECTOR` y al `ADMINISTRADOR`; las confirmaciones con identidad solo las ve el `ADMINISTRADOR` (auditoría).
   El backend calcula `esMia` para el usuario actual.
-- **Correo:** solo el `ADMIN` lo recibe, en la gestión de usuarios y en el detalle de auditoría.
+- **Correo:** solo el `ADMINISTRADOR` lo recibe, en la gestión de usuarios y en el detalle de auditoría.
 - **Errores:** cuerpo `{ "mensaje": "texto para mostrar al usuario" }`.
   `400` validación · `401` no autenticado o credenciales inválidas · `403` sin permiso · `404` no existe · `409` conflicto.
-- **JWT:** el payload debe incluir `sub` (id), `usuario` y `rol` (`ESTUDIANTE` | `PROFESOR` | `DIRECTOR` | `ADMIN`).
+- **JWT:** el payload incluye `sub` (id), `usuario` y `rol` (`ESTUDIANTE` | `PROFESOR` | `DIRECTOR` | `ADMINISTRADOR`).
   El cliente lee el rol del token, así que un cambio de rol se aplica en el siguiente inicio de sesión.
 - **Fechas:** ISO-8601 (`2026-10-25T19:30:00`). Los filtros `desde` y `hasta` usan `YYYY-MM-DD` y se aplican a la fecha de registro.
 - **Periodo académico:** `YYYY-1` o `YYYY-2` (por ejemplo `2026-2`).
@@ -30,29 +29,28 @@ PENDIENTE -> OBSERVADA -> (el estudiante edita y reenvía) -> PENDIENTE -> PUBLI
 PUBLICADA -> EN_ATENCION -> RESUELTA        (también PUBLICADA -> RESUELTA directo)
 ```
 
-`PUBLICADA` es el estado "Aprobada" del documento de requerimientos (se conserva el nombre técnico).
+`PUBLICADA` es el nombre en la API del estado `APROBADA` almacenado en MySQL.
 Visibles para los suscritos del canal: `PUBLICADA`, `EN_ATENCION` y `RESUELTA`. Se puede confirmar, reaccionar y comentar en `PUBLICADA` y `EN_ATENCION`.
 
 **Prioridad** según confirmaciones: 0 o 1 `BAJA` · 2 a 4 `MEDIA` · 5 o más `ALTA`.
 
-**Categorías:** `Evaluaciones y notas`, `Horarios y aulas`, `Infraestructura y equipos`, `Material y contenidos`,
-`Comunicación y avisos`, `Otro`. La lista vigente la entrega `GET /categorias`.
+**Categorías:** la lista vigente se lee de `incidencias_categoria` mediante `GET /categorias`.
 
 ## Objetos
 
 **Canal**
 ```json
-{ "id": 1, "nombre": "INF263 · Algoritmia", "descripcion": "…", "periodo": "2026-2", "activo": true,
-  "curso": { "id": 1, "codigo": "INF263", "nombre": "Algoritmia" },
+{ "id": "<uuid>", "nombre": "INF263 · Algoritmia", "descripcion": "…", "periodo": "2026-2", "activo": true,
+  "curso": { "id": "<uuid>", "codigo": "INF263", "nombre": "Algoritmia" },
   "suscrito": true, "totalSuscritos": 12, "totalPublicadas": 3 }
 ```
 Un canal vincula un curso con un periodo. Un canal desactivado conserva sus incidencias pero no admite suscripciones nuevas ni incidencias nuevas.
 
 **Incidencia**
 ```json
-{ "id": 7, "titulo": "…", "descripcion": "…", "categoria": "Evaluaciones y notas",
+{ "id": "<uuid>", "titulo": "…", "descripcion": "…", "categoria": "Evaluaciones y calificaciones",
   "estado": "PUBLICADA", "fechaCreacion": "…",
-  "canal": { "id": 1, "nombre": "INF263 · Algoritmia", "periodo": "2026-2" },
+  "canal": { "id": "<uuid>", "nombre": "INF263 · Algoritmia", "periodo": "2026-2" },
   "autor": null,
   "confirmaciones": 5, "prioridad": "ALTA", "confirmadaPorMi": false,
   "reacciones": { "APOYO": 2, "PREOCUPANTE": 0, "URGENTE": 1, "LO_SIGO": 0 }, "miReaccion": null,
@@ -61,7 +59,7 @@ Un canal vincula un curso con un periodo. Un canal desactivado conserva sus inci
   "puedeEditar": false, "puedeReenviar": false,
   "revision": null, "observacion": null, "solucion": null, "fechaResolucion": null }
 ```
-- `autor`: `{ "usuario": "alumno2" }` solo para `DIRECTOR` y `ADMIN`; `null` para los demás.
+- `autor`: `{ "usuario": "alumno2" }` solo para `DIRECTOR` y `ADMINISTRADOR`; `null` para los demás.
 - `revision` (solo si `esMia` o el usuario es `DIRECTOR`; si no, `null`):
   `{ "decision": "APROBADA|RECHAZADA", "motivo": "texto|null", "comentario": "texto|null", "fecha": "…" }`
 - `observacion`: texto de la última observación mientras el estado es `OBSERVADA` (solo `esMia` o `DIRECTOR`).
@@ -175,21 +173,20 @@ Los filtros se aplican a la fecha de registro de la incidencia y al periodo de s
 
 Respuesta de `/admin/reportes/{id}`:
 ```json
-{ "id": 1, "titulo": "…", "descripcion": "…", "categoria": "…", "estado": "PUBLICADA", "fechaCreacion": "…",
-  "canal": { "id": 1, "nombre": "…", "periodo": "2026-2" },
+{ "id": "<uuid>", "titulo": "…", "descripcion": "…", "categoria": "…", "estado": "PUBLICADA", "fechaCreacion": "…",
+  "canal": { "id": "<uuid>", "nombre": "…", "periodo": "2026-2" },
   "autor": { "usuario": "alumno2", "correo": "alumno2@pucp.edu.pe" },
   "confirmaciones": 5, "prioridad": "ALTA", "solucion": null,
   "versiones": [{ "n": 1, "titulo": "…", "descripcion": "…", "categoria": "…", "fecha": "…" }],
   "eventos": [{ "tipo": "CREADA", "estado": "PENDIENTE", "fecha": "…", "detalle": null, "responsable": "alumno2" }] }
 ```
-`eventos` incluye creación, ediciones, observaciones, reenvíos, decisiones, cambios de estado y cada confirmación (`tipo: "CONFIRMADA"`, con el usuario que confirmó), ordenados por fecha.
+`eventos` incluye creación, ediciones, observaciones, reenvíos, decisiones, cambios de estado y cada confirmación o retiro (`tipo: "CONFIRMADA"` o `"CONFIRMACION_RETIRADA"`, con el usuario que actuó), ordenados por fecha.
 La auditoría es de solo lectura: el administrador no puede modificar ni eliminar reportes ni su historial.
 
-Acciones del registro general: `CUENTA_REGISTRADA`, `CUENTA_DESACTIVADA`, `ROL_ASIGNADO`, `CURSO_REGISTRADO`, `CANAL_CREADO`, `CANAL_DESACTIVADO`,
+Acciones del registro general: `CUENTA_REGISTRADA`, `CUENTA_DESACTIVADA`, `CUENTA_REACTIVADA`, `ROL_ASIGNADO`, `CURSO_REGISTRADO`, `CANAL_CREADO`, `CANAL_DESACTIVADO`,
 `INCIDENCIA_REGISTRADA`, `INCIDENCIA_EDITADA`, `INCIDENCIA_OBSERVADA`, `INCIDENCIA_REENVIADA`, `INCIDENCIA_APROBADA`,
-`INCIDENCIA_RECHAZADA`, `INCIDENCIA_EN_ATENCION`, `INCIDENCIA_RESUELTA`. El actor es el nombre de usuario de quien ejecutó la acción.
+`INCIDENCIA_RECHAZADA`, `INCIDENCIA_EN_ATENCION`, `INCIDENCIA_RESUELTA`, `INCIDENCIA_CONFIRMADA`, `INCIDENCIA_CONFIRMACION_RETIRADA`. El actor es el nombre de usuario de quien ejecutó la acción.
 
 ## Datos precargados recomendados
 
-Usuarios `admin`, `director` y `profesor` (no se registran solos), catálogo de cursos, canales del periodo vigente, categorías, motivos de rechazo y
-comentarios predefinidos. Los valores de ejemplo están en la función `semilla()` de `frontend/src/api/mock.js`.
+Las categorías se cargan en V2 y los motivos de rechazo y comentarios predefinidos en V4. Los cursos, canales y cuentas se crean mediante la API; para pruebas locales existe `backend/src/main/resources/db/datos-prueba/`.
