@@ -66,8 +66,8 @@ Datos de prueba (usuarios demo con clave `Prueba#2026`, canales e incidencias en
 ## API
 
 Prefijo `/api`. Errores en JSON `{ "mensaje": "..." }` (formato de `docs/API.md`). Todo exige `Authorization: Bearer <token>`
-salvo lo marcado como público. Los endpoints de `/admin/cursos` aún aceptan a cualquier usuario autenticado: la columna Rol
-indica el rol que se exigirá cuando se agregue `@PreAuthorize`.
+salvo lo marcado como público. La columna Rol indica el rol exigido con `@PreAuthorize`: sin token responde 401 y con otro
+rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 
 | Método | Ruta | Rol | Qué hace |
 | --- | --- | --- | --- |

@@ -33,19 +33,19 @@ class SeguridadIT extends PruebaIntegracion {
 				.saveAndFlush(new Usuario("ana@pucp.edu.pe", "ana", "hash", Rol.ESTUDIANTE, LocalDateTime.now()));
 	}
 
-	private ResultActions pedirCursosCon(String token) throws Exception {
-		return mvc.perform(get("/admin/cursos").header("Authorization", "Bearer " + token));
+	private ResultActions pedirMeCon(String token) throws Exception {
+		return mvc.perform(get("/auth/me").header("Authorization", "Bearer " + token));
 	}
 
 	@Test
 	void sinTokenResponde401ConMensaje() throws Exception {
-		mvc.perform(get("/admin/cursos")).andExpect(status().isUnauthorized())
+		mvc.perform(get("/auth/me")).andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.mensaje").value("Debes iniciar sesión."));
 	}
 
 	@Test
 	void conTokenBasuraResponde401() throws Exception {
-		pedirCursosCon("esto-no-es-un-jwt").andExpect(status().isUnauthorized())
+		pedirMeCon("esto-no-es-un-jwt").andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.mensaje").value("Debes iniciar sesión."));
 	}
 
@@ -58,7 +58,7 @@ class SeguridadIT extends PruebaIntegracion {
 	void conTokenVigenteEntra() throws Exception {
 		Usuario ana = guardarAna();
 
-		pedirCursosCon(jwt.emitir(ana.getId(), "ana", "ESTUDIANTE", ana.getVersionSesion())).andExpect(status().isOk());
+		pedirMeCon(jwt.emitir(ana.getId(), "ana", "ESTUDIANTE", ana.getVersionSesion())).andExpect(status().isOk());
 	}
 
 	@Test
@@ -69,7 +69,7 @@ class SeguridadIT extends PruebaIntegracion {
 		ana.cerrarSesion();
 		repositorio.saveAndFlush(ana);
 
-		pedirCursosCon(token).andExpect(status().isUnauthorized());
+		pedirMeCon(token).andExpect(status().isUnauthorized());
 	}
 
 	@Test
@@ -79,12 +79,12 @@ class SeguridadIT extends PruebaIntegracion {
 		ana.desactivar();
 		repositorio.saveAndFlush(ana);
 
-		pedirCursosCon(token).andExpect(status().isUnauthorized());
+		pedirMeCon(token).andExpect(status().isUnauthorized());
 	}
 
 	@Test
 	void unTokenDeUnUsuarioInexistenteSeRechaza() throws Exception {
-		pedirCursosCon(jwt.emitir("00000000-0000-0000-0000-000000000000", "ana", "ADMINISTRADOR", 0))
+		pedirMeCon(jwt.emitir("00000000-0000-0000-0000-000000000000", "ana", "ADMINISTRADOR", 0))
 				.andExpect(status().isUnauthorized());
 	}
 
