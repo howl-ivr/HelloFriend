@@ -20,6 +20,11 @@ public class ExcepcionNegocio extends RuntimeException {
 		return new ExcepcionNegocio(HttpStatus.BAD_REQUEST, mensaje);
 	}
 
+	/** 401: no se pudo comprobar quién es el usuario (credenciales incorrectas, sesión inválida). */
+	public static ExcepcionNegocio noAutorizado(String mensaje) {
+		return new ExcepcionNegocio(HttpStatus.UNAUTHORIZED, mensaje);
+	}
+
 	/** 404: el recurso no existe. */
 	public static ExcepcionNegocio noEncontrado(String mensaje) {
 		return new ExcepcionNegocio(HttpStatus.NOT_FOUND, mensaje);
