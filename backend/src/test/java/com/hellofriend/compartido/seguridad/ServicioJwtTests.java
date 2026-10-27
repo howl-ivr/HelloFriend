@@ -49,9 +49,10 @@ class ServicioJwtTests {
 	void elTokenLlevaIdRolVersionYVigencia() {
 		Clock ahora = Clock.fixed(Instant.now(), ZoneOffset.UTC);
 
-		Jwt jwt = decodificador(CLAVE).decode(servicio(CLAVE, ahora, 8).emitir(ID, "ESTUDIANTE", 3));
+		Jwt jwt = decodificador(CLAVE).decode(servicio(CLAVE, ahora, 8).emitir(ID, "ana", "ESTUDIANTE", 3));
 
 		assertThat(jwt.getSubject()).isEqualTo(ID);
+		assertThat(jwt.<String>getClaim("usuario")).isEqualTo("ana");
 		assertThat(jwt.<String>getClaim("rol")).isEqualTo("ESTUDIANTE");
 		assertThat(((Number) jwt.getClaim("ver")).intValue()).isEqualTo(3);
 		assertThat(jwt.getClaimAsString("iss")).isEqualTo("hellofriend");
@@ -61,7 +62,7 @@ class ServicioJwtTests {
 	@Test
 	void rechazaUnTokenFirmadoConOtraClave() {
 		String ajeno = servicio(clave("otro-secreto-distinto-con-mas-de-32-caracteres"), Clock.systemUTC(), 8)
-				.emitir(ID, "ADMINISTRADOR", 0);
+				.emitir(ID, "ana", "ADMINISTRADOR", 0);
 
 		assertThatThrownBy(() -> decodificador(CLAVE).decode(ajeno)).isInstanceOf(JwtException.class);
 	}
@@ -69,14 +70,14 @@ class ServicioJwtTests {
 	@Test
 	void rechazaUnTokenVencido() {
 		Clock haceDiezHoras = Clock.fixed(Instant.now().minus(Duration.ofHours(10)), ZoneOffset.UTC);
-		String vencido = servicio(CLAVE, haceDiezHoras, 8).emitir(ID, "ESTUDIANTE", 0);
+		String vencido = servicio(CLAVE, haceDiezHoras, 8).emitir(ID, "ana", "ESTUDIANTE", 0);
 
 		assertThatThrownBy(() -> decodificador(CLAVE).decode(vencido)).isInstanceOf(JwtException.class);
 	}
 
 	@Test
 	void rechazaUnTokenManipulado() {
-		String token = servicio(CLAVE, Clock.systemUTC(), 8).emitir(ID, "ESTUDIANTE", 0);
+		String token = servicio(CLAVE, Clock.systemUTC(), 8).emitir(ID, "ana", "ESTUDIANTE", 0);
 		String[] partes = token.split("\\.");
 		String carga = Base64.getUrlEncoder().withoutPadding()
 				.encodeToString(

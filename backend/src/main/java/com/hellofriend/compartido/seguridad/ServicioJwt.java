@@ -14,13 +14,14 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 /**
- * Emite el token del login. Claims: "sub" = id del usuario, "rol", "ver" = versión de sesión con la que se emitió
- * ({@link VerificadorSesion}), más emisor y vigencia.
+ * Emite el token del login. Claims: "sub" = id del usuario, "usuario", "rol" (los tres que pide docs/API.md), "ver" =
+ * versión de sesión con la que se emitió ({@link VerificadorSesion}), más emisor y vigencia.
  */
 @Service
 public class ServicioJwt {
 
 	static final String EMISOR = "hellofriend";
+	static final String CLAIM_USUARIO = "usuario";
 	static final String CLAIM_ROL = "rol";
 	static final String CLAIM_VERSION = "ver";
 
@@ -34,10 +35,11 @@ public class ServicioJwt {
 		this.vigencia = Duration.ofHours(horas);
 	}
 
-	public String emitir(String usuarioId, String rol, int versionSesion) {
+	public String emitir(String usuarioId, String nombreUsuario, String rol, int versionSesion) {
 		Instant ahora = reloj.instant();
 		JwtClaimsSet claims = JwtClaimsSet.builder().issuer(EMISOR).issuedAt(ahora).expiresAt(ahora.plus(vigencia))
-				.subject(usuarioId).claim(CLAIM_ROL, rol).claim(CLAIM_VERSION, versionSesion).build();
+				.subject(usuarioId).claim(CLAIM_USUARIO, nombreUsuario).claim(CLAIM_ROL, rol)
+				.claim(CLAIM_VERSION, versionSesion).build();
 		JwsHeader cabecera = JwsHeader.with(MacAlgorithm.HS256).build();
 		return codificador.encode(JwtEncoderParameters.from(cabecera, claims)).getTokenValue();
 	}

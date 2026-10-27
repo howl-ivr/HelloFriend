@@ -64,12 +64,16 @@ Datos de prueba (usuarios demo con clave `Prueba#2026`, canales e incidencias en
 
 ## API
 
-Prefijo `/api`. Errores en JSON `{ "mensaje": "..." }` (formato de `docs/API.md`). Aún no hay seguridad: la columna Rol
-indica el rol que se exigirá cuando exista el módulo `usuarios`.
+Prefijo `/api`. Errores en JSON `{ "mensaje": "..." }` (formato de `docs/API.md`). Todo exige `Authorization: Bearer <token>`
+salvo lo marcado como público. Los endpoints de `/admin/cursos` aún aceptan a cualquier usuario autenticado: la columna Rol
+indica el rol que se exigirá cuando se agregue `@PreAuthorize`.
 
 | Método | Ruta | Rol | Qué hace |
 | --- | --- | --- | --- |
 | GET | `/actuator/health` | público | Estado de la aplicación |
+| POST | `/auth/login` | público | `{ usuario, password }` → `{ token, usuario, rol }`. 401 si las credenciales fallan (mismo mensaje exista o no el usuario); 403 si la cuenta no está activa |
+| GET | `/auth/me` | autenticado | `{ usuario, rol }` del token; nunca devuelve el correo |
+| POST | `/auth/logout` | autenticado | 204; suma 1 a `version_sesion`, así que todos los tokens anteriores dejan de valer |
 | POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
 | GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
 | GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |

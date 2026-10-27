@@ -58,13 +58,13 @@ class SeguridadIT extends PruebaIntegracion {
 	void conTokenVigenteEntra() throws Exception {
 		Usuario ana = guardarAna();
 
-		pedirCursosCon(jwt.emitir(ana.getId(), "ESTUDIANTE", ana.getVersionSesion())).andExpect(status().isOk());
+		pedirCursosCon(jwt.emitir(ana.getId(), "ana", "ESTUDIANTE", ana.getVersionSesion())).andExpect(status().isOk());
 	}
 
 	@Test
 	void trasCerrarSesionElTokenViejoDejaDeValer() throws Exception {
 		Usuario ana = guardarAna();
-		String token = jwt.emitir(ana.getId(), "ESTUDIANTE", ana.getVersionSesion());
+		String token = jwt.emitir(ana.getId(), "ana", "ESTUDIANTE", ana.getVersionSesion());
 
 		ana.cerrarSesion();
 		repositorio.saveAndFlush(ana);
@@ -75,7 +75,7 @@ class SeguridadIT extends PruebaIntegracion {
 	@Test
 	void unaCuentaDesactivadaPierdeElAccesoAlInstante() throws Exception {
 		Usuario ana = guardarAna();
-		String token = jwt.emitir(ana.getId(), "ESTUDIANTE", ana.getVersionSesion());
+		String token = jwt.emitir(ana.getId(), "ana", "ESTUDIANTE", ana.getVersionSesion());
 		ana.desactivar();
 		repositorio.saveAndFlush(ana);
 
@@ -84,7 +84,7 @@ class SeguridadIT extends PruebaIntegracion {
 
 	@Test
 	void unTokenDeUnUsuarioInexistenteSeRechaza() throws Exception {
-		pedirCursosCon(jwt.emitir("00000000-0000-0000-0000-000000000000", "ADMINISTRADOR", 0))
+		pedirCursosCon(jwt.emitir("00000000-0000-0000-0000-000000000000", "ana", "ADMINISTRADOR", 0))
 				.andExpect(status().isUnauthorized());
 	}
 

@@ -43,12 +43,11 @@ class UsuarioRepositorioIT extends PruebaIntegracion {
 	}
 
 	@Test
-	void buscaPorUsuarioOPorCorreoParaElLogin() {
+	void buscaPorUsuarioSinImportarMayusculas() {
 		guardarAna();
 
-		assertThat(repositorio.findByCorreoOrUsuario("ana", "ana")).isPresent();
-		assertThat(repositorio.findByCorreoOrUsuario("ana@pucp.edu.pe", "ana@pucp.edu.pe")).isPresent();
-		assertThat(repositorio.findByCorreoOrUsuario("nadie", "nadie")).isEmpty();
+		assertThat(repositorio.findByUsuario("ANA")).isPresent();
+		assertThat(repositorio.findByUsuario("nadie")).isEmpty();
 		assertThat(repositorio.existsByUsuario("ana")).isTrue();
 	}
 

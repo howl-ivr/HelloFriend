@@ -25,6 +25,11 @@ public class ExcepcionNegocio extends RuntimeException {
 		return new ExcepcionNegocio(HttpStatus.UNAUTHORIZED, mensaje);
 	}
 
+	/** 403: el usuario es quien dice ser, pero no puede hacer esto (por ejemplo, cuenta no activa). */
+	public static ExcepcionNegocio prohibido(String mensaje) {
+		return new ExcepcionNegocio(HttpStatus.FORBIDDEN, mensaje);
+	}
+
 	/** 404: el recurso no existe. */
 	public static ExcepcionNegocio noEncontrado(String mensaje) {
 		return new ExcepcionNegocio(HttpStatus.NOT_FOUND, mensaje);
