@@ -4,7 +4,7 @@
 - **Fecha:** 2026-10-27
 - **Tarea:** registro con aprobación, login con JWT, cierre de sesión, recuperación y cambio de contraseña, y protección por rol
 - **Estado:** implementado en la rama; pendiente de revisión del equipo
-- **Verificación:** `.\mvnw.cmd verify` en verde (135 pruebas: 17 unitarias y 118 de integración); nada se conectó a RDS
+- **Verificación:** `.\mvnw.cmd verify` en verde (151 pruebas: 33 unitarias y 118 de integración); nada se conectó a RDS
 
 ## Decisiones
 
@@ -34,6 +34,10 @@
   queda al menos un administrador que pueda entrar. `GET /admin/usuarios` acepta `?rol=` (sin él, estudiantes, como el contrato) y
   devuelve `activo`, un campo extra respecto de `docs/API.md`.
 - **Rol del administrador: se mantiene `ADMINISTRADOR`** (es el valor del CHECK de V1); `docs/API.md` dice `ADMIN`.
+- **`JWT_SECRET` obligatorio fuera de local.** `application.properties` conserva un valor de desarrollo para no pedir configuración
+  en tu PC, pero ese valor es público. `ValidadorSecretoJwt` impide arrancar si se usa y la base de datos no es local (`localhost`,
+  `127.0.0.1` o `::1`); en producción, donde la base es RDS, hay que definir `JWT_SECRET` en `deploy/.env`. El mensaje de error
+  no incluye el secreto. Criterio: "local" se decide por el host de la base, igual que en `PruebaIntegracion`.
 - **401 y 403 salen como `{ "mensaje": "..." }` desde la cadena de seguridad**, no desde `ManejadorErrores`, porque ocurren antes
   de Spring MVC.
 
@@ -48,8 +52,6 @@
 
 ## Riesgos conocidos y pendiente
 
-- **`JWT_SECRET` tiene un valor por defecto de desarrollo.** Si un despliegue olvida definirlo, arranca con un secreto público y
-  cualquiera puede fabricar un token de administrador. Conviene exigirlo fuera de local (fallar al arrancar si falta).
 - **Sin límite de intentos ni de frecuencia** en login, cambio de contraseña y recuperación. Si se quiere bloqueo por cuenta, hace
   falta una migración (`V4`, columnas de intentos y bloqueo).
 - **Cerrar sesión o cambiar la contraseña cierra todos los dispositivos**, porque hay una sola versión por usuario.

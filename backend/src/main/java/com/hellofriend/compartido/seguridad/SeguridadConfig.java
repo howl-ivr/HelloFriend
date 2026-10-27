@@ -95,12 +95,10 @@ public class SeguridadConfig {
 	}
 
 	@Bean
-	SecretKey claveJwt(@Value("${hellofriend.jwt.secreto}") String secreto) {
-		byte[] bytes = secreto.getBytes(StandardCharsets.UTF_8);
-		if (bytes.length < 32) {
-			throw new IllegalStateException("JWT_SECRET debe tener al menos 32 bytes");
-		}
-		return new SecretKeySpec(bytes, "HmacSHA256");
+	SecretKey claveJwt(@Value("${hellofriend.jwt.secreto}") String secreto,
+			@Value("${spring.datasource.url}") String urlBaseDeDatos) {
+		ValidadorSecretoJwt.exigirSeguro(secreto, urlBaseDeDatos);
+		return new SecretKeySpec(secreto.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
 	}
 
 	@Bean

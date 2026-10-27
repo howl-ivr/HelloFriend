@@ -29,7 +29,7 @@ Todo sale de variables de entorno (o de `backend/.env`, que las variables reales
 | `FLYWAY_URL` / `FLYWAY_USER` / `FLYWAY_PASSWORD` | Solo para `mvnw flyway:*` a mano (van en la terminal, no en `.env`) | sin valor |
 | `PORT` | Puerto HTTP | `8080` |
 | `CORS_ORIGINS` | Orígenes del frontend permitidos | `http://localhost:5173` |
-| `JWT_SECRET` | Secreto que firma los tokens (mínimo 32 bytes). **Obligatorio cambiarlo fuera de local**: quien lo conozca puede fabricar un token de administrador | valor de desarrollo |
+| `JWT_SECRET` | Secreto que firma los tokens (mínimo 32 bytes). **Obligatorio fuera de local**: con el valor de desarrollo, que es público, cualquiera podría fabricar un token de administrador. Si la base de datos no es `localhost`, `127.0.0.1` ni `::1` y falta `JWT_SECRET`, la aplicación no arranca | valor de desarrollo (solo con base local) |
 | `JWT_HORAS` | Horas de vigencia del token | `8` |
 | `FRONTEND_URL` | Dónde abre el enlace del correo de recuperación (`/restablecer?token=...`) | `http://localhost:5173` |
 | `RECUPERACION_MINUTOS` | Minutos de vigencia del enlace de recuperación | `30` |
