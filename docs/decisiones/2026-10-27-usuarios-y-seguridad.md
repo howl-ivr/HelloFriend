@@ -4,7 +4,7 @@
 - **Fecha:** 2026-10-27
 - **Tarea:** registro con aprobación, login con JWT, cierre de sesión, recuperación y cambio de contraseña, y protección por rol
 - **Estado:** implementado en la rama; pendiente de revisión del equipo
-- **Verificación:** `.\mvnw.cmd verify` en verde (117 pruebas: 17 unitarias y 100 de integración); nada se conectó a RDS
+- **Verificación:** `.\mvnw.cmd verify` en verde (135 pruebas: 17 unitarias y 118 de integración); nada se conectó a RDS
 
 ## Decisiones
 
