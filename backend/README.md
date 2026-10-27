@@ -59,6 +59,7 @@ Una migración ya subida nunca se edita.
 | --- | --- |
 | `V1__usuarios_cuentas.sql` | Tabla `usuarios_usuario` (correo, usuario de hasta 15 caracteres, contraseña cifrada, rol, activo) |
 | `V2__modelo_incidencias.sql` | Columnas de sesión y recuperación en `usuarios_usuario`; tablas `academico_curso`, `canales_canal`, `canales_suscripcion`, `incidencias_categoria` (8 categorías cargadas), `incidencias_incidencia`, `incidencias_version`, `incidencias_observacion`, `incidencias_confirmacion`, `incidencias_historial_estado`, `notificaciones_notificacion` y la vista `auditoria_historial_incidencia` |
+| `V3__usuarios_estado_cuenta.sql` | Columna `estado` (`PENDIENTE`, `ACTIVA`, `RECHAZADA`; por defecto `ACTIVA`) en `usuarios_usuario` |
 
 Datos de prueba (usuarios demo con clave `Prueba#2026`, canales e incidencias en cada estado): `db/datos-prueba/R__datos_prueba.sql`. Solo se cargan si defines `FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/datos-prueba` en tu `.env` local o en un servidor de pruebas; nunca en producción. Las pruebas de integración no los cargan.
 
@@ -71,9 +72,13 @@ indica el rol que se exigirá cuando se agregue `@PreAuthorize`.
 | Método | Ruta | Rol | Qué hace |
 | --- | --- | --- | --- |
 | GET | `/actuator/health` | público | Estado de la aplicación |
-| POST | `/auth/login` | público | `{ usuario, password }` → `{ token, usuario, rol }`. 401 si las credenciales fallan (mismo mensaje exista o no el usuario); 403 si la cuenta no está activa |
+| POST | `/auth/registro` | público | `{ correo, usuario, password }` → 201 `{ mensaje }`. La cuenta queda `PENDIENTE` como ESTUDIANTE. 400 si el correo no es `@pucp.edu.pe`, el usuario no cumple `^[a-zA-Z0-9._-]{3,15}$` o la contraseña no tiene de 6 a 64 caracteres; 409 si el usuario o el correo ya existen |
+| POST | `/auth/login` | público | `{ usuario, password }` → `{ token, usuario, rol }`. 401 si las credenciales fallan (mismo mensaje exista o no el usuario); 403 si la cuenta está `PENDIENTE`, `RECHAZADA` o desactivada |
 | GET | `/auth/me` | autenticado | `{ usuario, rol }` del token; nunca devuelve el correo |
 | POST | `/auth/logout` | autenticado | 204; suma 1 a `version_sesion`, así que todos los tokens anteriores dejan de valer |
+| GET | `/admin/usuarios` | ADMINISTRADOR | Estudiantes `[{ id, usuario, rol, estado, fechaRegistro }]`, los más antiguos primero, sin correo. Con `?estado=PENDIENTE\|ACTIVA\|RECHAZADA` filtra; otro valor da 400 |
+| POST | `/admin/usuarios/{id}/aprobar` | ADMINISTRADOR | `PENDIENTE` → `ACTIVA`; devuelve el usuario. 404 si no existe; 409 si ya no está pendiente |
+| POST | `/admin/usuarios/{id}/rechazar` | ADMINISTRADOR | `PENDIENTE` → `RECHAZADA`; mismos errores |
 | POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
 | GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
 | GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |

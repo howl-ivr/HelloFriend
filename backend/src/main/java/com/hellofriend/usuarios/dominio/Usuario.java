@@ -37,6 +37,11 @@ public class Usuario {
 	@Column(name = "rol", nullable = false, length = 20)
 	private Rol rol;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "estado", nullable = false, length = 10)
+	private EstadoCuenta estado = EstadoCuenta.ACTIVA;
+
+	/** Desactivación de una cuenta ya aprobada; el flujo de aprobación está en {@code estado}. */
 	@Column(name = "activo", nullable = false)
 	private boolean activo = true;
 
@@ -57,6 +62,26 @@ public class Usuario {
 		this.contrasenaHash = contrasenaHash;
 		this.rol = rol;
 		this.creadoEn = creadoEn;
+	}
+
+	/** Cuenta de un estudiante que se registró solo: queda PENDIENTE hasta que el administrador la apruebe. */
+	public static Usuario solicitud(String correo, String usuario, String contrasenaHash, LocalDateTime creadoEn) {
+		Usuario nueva = new Usuario(correo, usuario, contrasenaHash, Rol.ESTUDIANTE, creadoEn);
+		nueva.estado = EstadoCuenta.PENDIENTE;
+		return nueva;
+	}
+
+	/** Solo una cuenta aprobada y no desactivada puede iniciar sesión o usar un token. */
+	public boolean puedeIniciarSesion() {
+		return activo && estado == EstadoCuenta.ACTIVA;
+	}
+
+	public void aprobar() {
+		estado = EstadoCuenta.ACTIVA;
+	}
+
+	public void rechazar() {
+		estado = EstadoCuenta.RECHAZADA;
 	}
 
 	/** Invalida todos los tokens emitidos hasta ahora. */
@@ -96,6 +121,10 @@ public class Usuario {
 
 	public Rol getRol() {
 		return rol;
+	}
+
+	public EstadoCuenta getEstado() {
+		return estado;
 	}
 
 	public boolean isActivo() {

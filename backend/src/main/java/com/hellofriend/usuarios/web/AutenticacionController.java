@@ -1,5 +1,7 @@
 package com.hellofriend.usuarios.web;
 
+import java.util.Map;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -15,17 +17,29 @@ import com.hellofriend.compartido.seguridad.ServicioJwt;
 import com.hellofriend.usuarios.aplicacion.PerfilDto;
 import com.hellofriend.usuarios.aplicacion.RespuestaLogin;
 import com.hellofriend.usuarios.aplicacion.ServicioAutenticacion;
+import com.hellofriend.usuarios.aplicacion.ServicioRegistro;
 import com.hellofriend.usuarios.aplicacion.SolicitudLogin;
+import com.hellofriend.usuarios.aplicacion.SolicitudRegistro;
 
-/** Sesión: login (público, contrato de docs/API.md), quién soy y cerrar sesión (requieren token). */
+/** Registro y login (públicos, contrato de docs/API.md), quién soy y cerrar sesión (requieren token). */
 @RestController
 @RequestMapping("/auth")
 public class AutenticacionController {
 
 	private final ServicioAutenticacion servicio;
+	private final ServicioRegistro registro;
 
-	public AutenticacionController(ServicioAutenticacion servicio) {
+	public AutenticacionController(ServicioAutenticacion servicio, ServicioRegistro registro) {
 		this.servicio = servicio;
+		this.registro = registro;
+	}
+
+	/** POST /auth/registro {correo, usuario, password} → 201 {mensaje}. La cuenta queda PENDIENTE. */
+	@PostMapping("/registro")
+	@ResponseStatus(HttpStatus.CREATED)
+	public Map<String, String> registrar(@Valid @RequestBody SolicitudRegistro solicitud) {
+		registro.registrar(solicitud);
+		return Map.of("mensaje", "Tu solicitud fue registrada. Un administrador revisará tu cuenta.");
 	}
 
 	/** POST /auth/login {usuario, password} → {token, usuario, rol}. 401 si falla; 403 si la cuenta no está activa. */

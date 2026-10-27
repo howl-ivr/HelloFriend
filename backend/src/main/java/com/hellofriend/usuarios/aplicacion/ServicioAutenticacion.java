@@ -39,10 +39,7 @@ public class ServicioAutenticacion {
 		if (!contrasenas.matches(solicitud.password(), usuario.getContrasenaHash())) {
 			throw ExcepcionNegocio.noAutorizado(CREDENCIALES_INVALIDAS);
 		}
-		// Solo quien acierta la contraseña se entera del estado de la cuenta.
-		if (!usuario.isActivo()) {
-			throw ExcepcionNegocio.prohibido("Tu cuenta no está activa.");
-		}
+		exigirQuePuedaEntrar(usuario);
 		String token = jwt.emitir(usuario.getId(), usuario.getUsuario(), usuario.getRol().name(),
 				usuario.getVersionSesion());
 		return new RespuestaLogin(token, usuario.getUsuario(), usuario.getRol());
@@ -56,6 +53,19 @@ public class ServicioAutenticacion {
 	/** Suma 1 a la versión de sesión: todos los tokens emitidos hasta ahora dejan de valer. */
 	public void cerrarSesion(String usuarioId) {
 		buscar(usuarioId).cerrarSesion();
+	}
+
+	/** Solo quien acierta la contraseña se entera del estado de la cuenta. */
+	private static void exigirQuePuedaEntrar(Usuario usuario) {
+		switch (usuario.getEstado()) {
+			case PENDIENTE -> throw ExcepcionNegocio.prohibido("Tu cuenta está pendiente de aprobación.");
+			case RECHAZADA -> throw ExcepcionNegocio.prohibido("Tu solicitud de registro fue rechazada.");
+			case ACTIVA -> {
+				if (!usuario.isActivo()) {
+					throw ExcepcionNegocio.prohibido("Tu cuenta no está activa.");
+				}
+			}
+		}
 	}
 
 	private Usuario buscar(String usuarioId) {
