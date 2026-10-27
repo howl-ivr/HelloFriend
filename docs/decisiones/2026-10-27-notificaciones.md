@@ -33,8 +33,8 @@
 
 ## A coordinar con el equipo
 
-- Anotar en `docs/API.md` (rama `front/setup` o `docs/api-usuarios-auth`): `tipo` y `titulo` en `GET /notificaciones`, el
-  endpoint `GET /notificaciones/no-leidas` y el parámetro opcional `?hasta=` de `PATCH /notificaciones/leidas`.
+- `tipo` y `titulo` en `GET /notificaciones`, el endpoint `GET /notificaciones/no-leidas` y el parámetro opcional `?hasta=` de
+  `PATCH /notificaciones/leidas` ya están en `docs/API.md` de `front/setup` (PR #6).
 - El contrato muestra ids numéricos y aquí son UUID (ver `2026-10-27-usuarios-y-seguridad.md`).
 
 ## Pendiente
