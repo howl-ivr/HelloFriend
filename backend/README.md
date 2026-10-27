@@ -4,7 +4,7 @@ API REST en **Java 21 + Spring Boot 4.1** con **MySQL 8.0**, Flyway, Spring Data
 Spotless; pruebas unitarias con Surefire (`*Tests`) y de integración con Failsafe (`*IT`).
 
 > Estado: están el catálogo de cursos y el módulo `usuarios` (registro libre, login con JWT,
-> cierre de sesión, recuperación y cambio de contraseña, protección por rol). Diseño y decisiones pendientes:
+> cierre de sesión, recuperación y cambio de contraseña, protección por rol) y la bandeja de notificaciones. Diseño y decisiones pendientes:
 > [`docs/decisiones/2026-10-27-usuarios-y-seguridad.md`](../docs/decisiones/2026-10-27-usuarios-y-seguridad.md).
 > **Falta acordar con el frontend (`docs/API.md`, en `origin/front/setup`):** rol `ADMIN` frente a `ADMINISTRADOR`, ids
 > numéricos frente a UUID, y los endpoints que el contrato aún no incluye (`/auth/me`, `/auth/logout`, `/auth/recuperar`,
@@ -87,6 +87,9 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | PUT | `/admin/usuarios/{id}/rol` | ADMINISTRADOR | `{ rol }` → el usuario. Cierra las sesiones de esa persona; si el rol es el mismo no hace nada. 403 si es la propia cuenta; 400 si el valor no es un rol; 404 |
 | POST | `/admin/usuarios/{id}/desactivar` | ADMINISTRADOR | La cuenta queda `DESACTIVADA`, se cierran sus sesiones y el login responde 403; conserva su historial. 403 si es la propia cuenta; 404; 409 si ya está desactivada |
 | POST | `/admin/usuarios/{id}/reactivar` | ADMINISTRADOR | La cuenta vuelve a `ACTIVA`; las sesiones anteriores no reviven. No está en `docs/API.md`. 404; 409 si ya está activa |
+| GET | `/notificaciones` | autenticado | Mi bandeja `[{ id, incidenciaId, tipo, titulo, mensaje, leida, fecha }]`, las más nuevas primero. `tipo` y `titulo` son campos extra del contrato. Cada persona ve solo las suyas, con cualquier rol |
+| PATCH | `/notificaciones/{id}/leida` | autenticado | 204. Marcar dos veces no cambia la fecha. 404 si no existe **o es de otra persona** (no se revela cuál) |
+| PATCH | `/notificaciones/leidas` | autenticado | 204. Marca todas las mías |
 | POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
 | GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
 | GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |
