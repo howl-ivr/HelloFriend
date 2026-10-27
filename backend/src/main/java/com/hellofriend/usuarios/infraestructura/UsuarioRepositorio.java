@@ -34,6 +34,10 @@ public interface UsuarioRepositorio extends JpaRepository<Usuario, String> {
 			""")
 	List<Usuario> buscar(@Param("rol") Rol rol, @Param("buscar") String buscar);
 
+	/** Ids de las cuentas activas con ese rol. */
+	@Query("select u.id from Usuario u where u.rol = :rol and u.activo = true")
+	List<String> idsActivosConRol(@Param("rol") Rol rol);
+
 	boolean existsByCorreo(String correo);
 
 	boolean existsByUsuario(String usuario);

@@ -1,0 +1,58 @@
+# Producción en una sola EC2: backend (Spring Boot) + MySQL 8.0 en contenedores.
+# El frontend está en Vercel y reenvía /api a esta máquina (frontend/vercel.json), así que no hace falta HTTPS aquí.
+#
+# Uso, en el servidor, desde la raíz del repo:
+#   cp deploy/.env.produccion.example deploy/.env      (y completa los valores)
+#   docker compose --env-file deploy/.env -f deploy/docker-compose.prod.yml up -d --build
+#   docker compose --env-file deploy/.env -f deploy/docker-compose.prod.yml logs -f backend
+#   docker compose --env-file deploy/.env -f deploy/docker-compose.prod.yml down       (conserva los datos)
+# NUNCA uses "down -v" aquí: borra la base de datos.
+#
+# Ver docs/guias/despliegue.md.
+
+name: hellofriend
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: >
+      --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+      --innodb-buffer-pool-size=128M --performance-schema=OFF
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Falta MYSQL_ROOT_PASSWORD en deploy/.env}
+      MYSQL_DATABASE: hellofriend
+      MYSQL_USER: hellofriend
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en deploy/.env}
+    # Sin "ports": MySQL no se publica en la máquina; solo lo ve el backend por la red interna de Docker.
+    volumes:
+      - datos_mysql:/var/lib/mysql
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/hellofriend?characterEncoding=UTF-8&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&allowPublicKeyRetrieval=true
+      DB_USER: hellofriend
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en deploy/.env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      FLYWAY_LOCATIONS: ${FLYWAY_LOCATIONS:-classpath:db/migration}
+      PORT: "8080"
+    # El puerto 80 de la EC2 llega al backend (8080 dentro del contenedor).
+    ports:
+      - "80:8080"
+    mem_limit: 768m
+
+volumes:
+  datos_mysql:

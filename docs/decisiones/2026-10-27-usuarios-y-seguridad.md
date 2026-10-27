@@ -49,12 +49,13 @@
 
 | Qué | Dónde | Estado |
 | --- | --- | --- |
-| Base del backend (CI, V1 y V2) | rama `chore/ci-backend` → PR 1 hacia `develop` | **Por abrir.** Incluye el trabajo de royal-22 (V2). Se integra primero, con "Merge commit" (no "Squash") |
-| Backend de usuarios, seguridad y notificaciones | rama `feat/usuarios-seguridad` (subida) → PR 2 hacia `develop` | **Por abrir.** Se integra después del PR 1; sin conflictos con `develop` |
+| Base del backend (CI, V1 y V2) | PR #7, de `chore/ci-backend` a `develop` | **Integrado** el 2026-10-27, con "Merge commit". Incluye el trabajo de royal-22 (V2) |
+| Backend de usuarios, seguridad y notificaciones | PR #8, de `feat/usuarios-seguridad` a `develop` | **Integrado** el 2026-10-27, con "Merge commit" |
 | Endpoints nuevos documentados en el contrato | PR #6, de `docs/api-usuarios-auth` a `front/setup` | **Integrado** el 2026-10-27 |
+| Frontend (`front/setup`) | PR hacia `develop`, lo abre quien lleva el frontend | **Por abrir.** Habrá un conflicto trivial en `.gitignore` (ambas ramas lo crearon): se resuelve juntando las líneas |
 | Rol del administrador: `ADMIN` (contrato) o `ADMINISTRADOR` (backend y V1) | — | **Sin decidir.** Hoy el login devuelve `ADMINISTRADOR`; el frontend debe leer ese valor o se cambia el backend |
 | Ids: numéricos (contrato) o UUID (backend) | — | **Sin decidir.** Hoy son UUID de 36 caracteres |
-| Conflictos entre esta rama y `main` | `main` tiene el revert del PR #4 (modelo de incidencias) | Se resuelve cuando `develop` se integre a `main`, no en estos PR |
+| `develop` → `main` | `main` tiene 3 commits que `develop` no: el PR #3, su revert (`6c4fd3e`) y el PR #4 | **Pendiente.** No unir `main` dentro de `develop` (10 conflictos y borraría archivos). Primero un PR a `main` que revierta `6c4fd3e`; luego el PR `develop` → `main`, que sale sin conflictos (probado en una copia aparte) |
 
 ## A coordinar con el equipo
 

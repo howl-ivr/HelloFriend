@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hellofriend.auditoria.aplicacion.ServicioAuditoria;
 import com.hellofriend.compartido.web.ExcepcionNegocio;
 import com.hellofriend.usuarios.dominio.Rol;
 import com.hellofriend.usuarios.dominio.Usuario;
@@ -12,16 +13,25 @@ import com.hellofriend.usuarios.infraestructura.UsuarioRepositorio;
 
 /**
  * Gestión de cuentas por el administrador: listar, cambiar el rol, desactivar y reactivar. Nadie puede cambiar su rol
- * ni desactivarse a sí mismo (403, como pide docs/API.md): así siempre queda un administrador que pueda entrar.
+ * ni desactivarse a sí mismo (403, como pide docs/API.md): así siempre queda un administrador que pueda entrar. Cada
+ * cambio deja su huella en la auditoría, dentro de la misma transacción.
  */
 @Service
 @Transactional
 public class ServicioUsuarios {
 
 	private final UsuarioRepositorio repositorio;
+	private final ServicioAuditoria auditoria;
 
-	public ServicioUsuarios(UsuarioRepositorio repositorio) {
+	public ServicioUsuarios(UsuarioRepositorio repositorio, ServicioAuditoria auditoria) {
 		this.repositorio = repositorio;
+		this.auditoria = auditoria;
+	}
+
+	/** Ids de las cuentas activas con ese rol (por ejemplo, los directores a quienes avisar). Para otros módulos. */
+	@Transactional(readOnly = true)
+	public List<String> idsActivosConRol(Rol rol) {
+		return repositorio.idsActivosConRol(rol);
 	}
 
 	/**
@@ -39,6 +49,7 @@ public class ServicioUsuarios {
 		exigirOtraPersona(usuario, actorId, "cambiar tu propio rol");
 		if (usuario.getRol() != rol) {
 			usuario.asignarRol(rol);
+			auditoria.registrar("ROL_ASIGNADO", actorId, id);
 		}
 		return UsuarioResumenDto.de(usuario);
 	}
@@ -51,15 +62,17 @@ public class ServicioUsuarios {
 			throw ExcepcionNegocio.conflicto("La cuenta ya está desactivada.");
 		}
 		usuario.desactivar();
+		auditoria.registrar("CUENTA_DESACTIVADA", actorId, id);
 		return UsuarioResumenDto.de(usuario);
 	}
 
-	public UsuarioResumenDto reactivar(String id) {
+	public UsuarioResumenDto reactivar(String id, String actorId) {
 		Usuario usuario = buscar(id);
 		if (usuario.isActivo()) {
 			throw ExcepcionNegocio.conflicto("La cuenta ya está activa.");
 		}
 		usuario.reactivar();
+		auditoria.registrar("CUENTA_REACTIVADA", actorId, id);
 		return UsuarioResumenDto.de(usuario);
 	}
 

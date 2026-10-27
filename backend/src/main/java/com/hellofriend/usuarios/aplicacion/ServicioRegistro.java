@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.hellofriend.auditoria.aplicacion.ServicioAuditoria;
 import com.hellofriend.compartido.web.ExcepcionNegocio;
 import com.hellofriend.usuarios.dominio.Usuario;
 import com.hellofriend.usuarios.infraestructura.UsuarioRepositorio;
@@ -22,11 +23,14 @@ public class ServicioRegistro {
 	private final UsuarioRepositorio repositorio;
 	private final PasswordEncoder contrasenas;
 	private final Clock reloj;
+	private final ServicioAuditoria auditoria;
 
-	public ServicioRegistro(UsuarioRepositorio repositorio, PasswordEncoder contrasenas, Clock reloj) {
+	public ServicioRegistro(UsuarioRepositorio repositorio, PasswordEncoder contrasenas, Clock reloj,
+			ServicioAuditoria auditoria) {
 		this.repositorio = repositorio;
 		this.contrasenas = contrasenas;
 		this.reloj = reloj;
+		this.auditoria = auditoria;
 	}
 
 	public void registrar(SolicitudRegistro solicitud) {
@@ -40,13 +44,15 @@ public class ServicioRegistro {
 			throw ExcepcionNegocio.conflicto("Ese correo ya está registrado.");
 		}
 		LocalDateTime creadoEn = LocalDateTime.ofInstant(reloj.instant(), ZoneOffset.UTC);
+		Usuario nueva;
 		try {
-			repositorio.saveAndFlush(
+			nueva = repositorio.saveAndFlush(
 					Usuario.registrada(correo, usuario, contrasenas.encode(solicitud.password()), creadoEn));
 		} catch (DataIntegrityViolationException e) {
 			// Dos registros simultáneos con el mismo dato: lo frena la restricción UNIQUE de la base.
 			throw ExcepcionNegocio.conflicto("El usuario o el correo ya están registrados.");
 		}
+		auditoria.registrar("CUENTA_REGISTRADA", nueva.getId(), null);
 	}
 
 }
