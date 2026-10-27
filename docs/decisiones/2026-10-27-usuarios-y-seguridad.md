@@ -49,18 +49,20 @@
 
 | Qué | Dónde | Estado |
 | --- | --- | --- |
-| Backend de usuarios y seguridad | rama `feat/usuarios-seguridad` (subida) → PR hacia `develop` | PR **por abrir**; sin conflictos con `develop` |
-| Endpoints nuevos documentados en el contrato | rama `docs/api-usuarios-auth` (subida) → PR hacia `front/setup` | PR **por abrir**; la revisa quien lleva el frontend |
+| Base del backend (CI, V1 y V2) | PR #7, de `chore/ci-backend` a `develop` | **Integrado** el 2026-10-27, con "Merge commit". Incluye el trabajo de royal-22 (V2) |
+| Backend de usuarios, seguridad y notificaciones | PR #8, de `feat/usuarios-seguridad` a `develop` | **Integrado** el 2026-10-27, con "Merge commit" |
+| Endpoints nuevos documentados en el contrato | PR #6, de `docs/api-usuarios-auth` a `front/setup` | **Integrado** el 2026-10-27 |
+| Frontend (`front/setup`) | PR hacia `develop`, lo abre quien lleva el frontend | **Por abrir.** Habrá un conflicto trivial en `.gitignore` (ambas ramas lo crearon): se resuelve juntando las líneas |
 | Rol del administrador: `ADMIN` (contrato) o `ADMINISTRADOR` (backend y V1) | — | **Sin decidir.** Hoy el login devuelve `ADMINISTRADOR`; el frontend debe leer ese valor o se cambia el backend |
 | Ids: numéricos (contrato) o UUID (backend) | — | **Sin decidir.** Hoy son UUID de 36 caracteres |
-| Conflictos entre esta rama y `main` | `main` tiene el revert del PR #4 (modelo de incidencias) | Se resuelve cuando `develop` se integre a `main`, no en estos PR |
+| `develop` → `main` | `main` tiene 3 commits que `develop` no: el PR #3, su revert (`6c4fd3e`) y el PR #4 | **Pendiente.** No unir `main` dentro de `develop` (10 conflictos y borraría archivos). Primero un PR a `main` que revierta `6c4fd3e`; luego el PR `develop` → `main`, que sale sin conflictos (probado en una copia aparte) |
 
 ## A coordinar con el equipo
 
 - Avisar que `V3` está tomada y que las siguientes migraciones empiezan en `V4`.
 - Frontend: acordar `ADMIN` frente a `ADMINISTRADOR` y ids numéricos frente a UUID. Los endpoints `/auth/me`, `/auth/logout`,
   `/auth/recuperar`, `/auth/restablecer`, `/auth/me/contrasena` y `/admin/usuarios/{id}/reactivar`, y la ruta
-  `/restablecer?token=...` de la pantalla de recuperación, ya están en `docs/API.md` de la rama `docs/api-usuarios-auth`.
+  `/restablecer?token=...` de la pantalla de recuperación, ya están en `docs/API.md` de `front/setup` (PR #6).
 - Las fechas de la API salen en UTC (sin zona), igual que `/admin/cursos`; `docs/API.md` muestra ISO-8601 sin offset.
 - Aplicar la V3 en RDS es un paso aparte (ver `2026-10-26-equipo-despliegue-pendiente.md`).
 
