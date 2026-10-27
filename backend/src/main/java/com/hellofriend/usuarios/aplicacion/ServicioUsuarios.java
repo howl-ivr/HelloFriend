@@ -11,7 +11,10 @@ import com.hellofriend.usuarios.dominio.Rol;
 import com.hellofriend.usuarios.dominio.Usuario;
 import com.hellofriend.usuarios.infraestructura.UsuarioRepositorio;
 
-/** Gestión de cuentas por el administrador: revisar las solicitudes de registro y aprobarlas o rechazarlas. */
+/**
+ * Gestión de cuentas por el administrador: aprobar o rechazar registros, cambiar el rol, desactivar y reactivar.
+ * Nadie puede cambiar su propio rol ni desactivarse, así siempre queda un administrador que pueda entrar.
+ */
 @Service
 @Transactional
 public class ServicioUsuarios {
@@ -22,12 +25,13 @@ public class ServicioUsuarios {
 		this.repositorio = repositorio;
 	}
 
-	/** Estudiantes, los más antiguos primero. Con {@code estado} solo los de ese estado. */
+	/** Usuarios del rol indicado (estudiantes si es null), los más antiguos primero; con {@code estado}, solo ese. */
 	@Transactional(readOnly = true)
-	public List<UsuarioResumenDto> listarEstudiantes(EstadoCuenta estado) {
+	public List<UsuarioResumenDto> listar(Rol rol, EstadoCuenta estado) {
+		Rol buscado = rol == null ? Rol.ESTUDIANTE : rol;
 		List<Usuario> usuarios = estado == null
-				? repositorio.findByRolOrderByCreadoEnAsc(Rol.ESTUDIANTE)
-				: repositorio.findByRolAndEstadoOrderByCreadoEnAsc(Rol.ESTUDIANTE, estado);
+				? repositorio.findByRolOrderByCreadoEnAsc(buscado)
+				: repositorio.findByRolAndEstadoOrderByCreadoEnAsc(buscado, estado);
 		return usuarios.stream().map(UsuarioResumenDto::de).toList();
 	}
 
@@ -43,13 +47,61 @@ public class ServicioUsuarios {
 		return UsuarioResumenDto.de(usuario);
 	}
 
+	/** Cambia el rol de una cuenta aprobada y cierra sus sesiones (el token lleva el rol). Mismo rol: no hace nada. */
+	public UsuarioResumenDto cambiarRol(String id, Rol rol, String actorId) {
+		Usuario usuario = buscar(id);
+		exigirOtraPersona(usuario, actorId, "cambiar tu propio rol");
+		exigirAprobada(usuario, "cambiar el rol de");
+		if (usuario.getRol() != rol) {
+			usuario.asignarRol(rol);
+		}
+		return UsuarioResumenDto.de(usuario);
+	}
+
+	/** La cuenta deja de poder entrar y sus sesiones abiertas se cierran. */
+	public UsuarioResumenDto desactivar(String id, String actorId) {
+		Usuario usuario = buscar(id);
+		exigirOtraPersona(usuario, actorId, "desactivar tu propia cuenta");
+		exigirAprobada(usuario, "desactivar");
+		if (!usuario.isActivo()) {
+			throw ExcepcionNegocio.conflicto("La cuenta ya está desactivada.");
+		}
+		usuario.desactivar();
+		return UsuarioResumenDto.de(usuario);
+	}
+
+	public UsuarioResumenDto reactivar(String id) {
+		Usuario usuario = buscar(id);
+		exigirAprobada(usuario, "reactivar");
+		if (usuario.isActivo()) {
+			throw ExcepcionNegocio.conflicto("La cuenta ya está activa.");
+		}
+		usuario.reactivar();
+		return UsuarioResumenDto.de(usuario);
+	}
+
+	private Usuario buscar(String id) {
+		return repositorio.findById(id).orElseThrow(() -> ExcepcionNegocio.noEncontrado("El usuario no existe."));
+	}
+
 	private Usuario pendiente(String id, String accion) {
-		Usuario usuario = repositorio.findById(id)
-				.orElseThrow(() -> ExcepcionNegocio.noEncontrado("El usuario no existe."));
+		Usuario usuario = buscar(id);
 		if (usuario.getEstado() != EstadoCuenta.PENDIENTE) {
 			throw ExcepcionNegocio.conflicto("Solo se puede " + accion + " una cuenta pendiente.");
 		}
 		return usuario;
+	}
+
+	private static void exigirAprobada(Usuario usuario, String accion) {
+		if (usuario.getEstado() != EstadoCuenta.ACTIVA) {
+			throw ExcepcionNegocio.conflicto("Solo se puede " + accion + " una cuenta aprobada.");
+		}
+	}
+
+	private static void exigirOtraPersona(Usuario usuario, String actorId, String accion) {
+		if (usuario.getId().equals(actorId)) {
+			throw ExcepcionNegocio.invalido("No puedes " + accion + ".");
+		}
 	}
 
 }

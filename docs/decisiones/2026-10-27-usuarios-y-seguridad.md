@@ -29,6 +29,10 @@
   sesiones.
 - **Cambio de contraseña con sesión.** Pide la actual (si falla, 400 y no 401, para no parecer sesión vencida), cierra todas las
   sesiones y devuelve un token nuevo. También anula un enlace de recuperación pendiente.
+- **Administración de cuentas.** El administrador puede cambiar el rol, desactivar y reactivar cuentas aprobadas (`/admin/usuarios`).
+  Cambiar el rol o desactivar cierra las sesiones de esa persona. Nadie puede cambiar su propio rol ni desactivarse, así siempre
+  queda al menos un administrador que pueda entrar. `GET /admin/usuarios` acepta `?rol=` (sin él, estudiantes, como el contrato) y
+  devuelve `activo`, un campo extra respecto de `docs/API.md`.
 - **Rol del administrador: se mantiene `ADMINISTRADOR`** (es el valor del CHECK de V1); `docs/API.md` dice `ADMIN`.
 - **401 y 403 salen como `{ "mensaje": "..." }` desde la cadena de seguridad**, no desde `ManejadorErrores`, porque ocurren antes
   de Spring MVC.
@@ -50,6 +54,4 @@
   falta una migración (`V4`, columnas de intentos y bloqueo).
 - **Cerrar sesión o cambiar la contraseña cierra todos los dispositivos**, porque hay una sola versión por usuario.
 - **El registro devuelve 409 si el usuario o el correo ya existen**, lo que confirma que existen. Lo pide el contrato.
-- **Falta la administración de usuarios más allá de aprobar o rechazar** (cambiar rol, desactivar y reactivar). Los métodos
-  existen en `Usuario` pero no tienen endpoint ni prueba de integración.
 - Los datos demo (`R__datos_prueba.sql`) entran con `Prueba#2026`; `DatosPruebaTests` comprueba que el hash coincida.

@@ -83,9 +83,12 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | GET | `/auth/me` | autenticado | `{ usuario, rol }` del token; nunca devuelve el correo |
 | PUT | `/auth/me/contrasena` | autenticado | `{ contrasenaActual, contrasenaNueva }` → `{ token, usuario, rol }`. Cierra todas las sesiones (suma 1 a `version_sesion`) y devuelve un token nuevo para seguir dentro; anula un enlace de recuperación pendiente. 400 si la actual es incorrecta (no 401, para no parecer sesión vencida), si la nueva es igual a la actual o no tiene de 6 a 64 caracteres |
 | POST | `/auth/logout` | autenticado | 204; suma 1 a `version_sesion`, así que todos los tokens anteriores dejan de valer |
-| GET | `/admin/usuarios` | ADMINISTRADOR | Estudiantes `[{ id, usuario, rol, estado, fechaRegistro }]`, los más antiguos primero, sin correo. Con `?estado=PENDIENTE\|ACTIVA\|RECHAZADA` filtra; otro valor da 400 |
+| GET | `/admin/usuarios` | ADMINISTRADOR | `[{ id, usuario, rol, estado, activo, fechaRegistro }]`, los más antiguos primero, sin correo. Sin `?rol=` lista estudiantes (contrato); con `?rol=PROFESOR` etc., ese rol. `?estado=PENDIENTE\|ACTIVA\|RECHAZADA` filtra; un valor desconocido da 400 |
 | POST | `/admin/usuarios/{id}/aprobar` | ADMINISTRADOR | `PENDIENTE` → `ACTIVA`; devuelve el usuario. 404 si no existe; 409 si ya no está pendiente |
 | POST | `/admin/usuarios/{id}/rechazar` | ADMINISTRADOR | `PENDIENTE` → `RECHAZADA`; mismos errores |
+| PUT | `/admin/usuarios/{id}/rol` | ADMINISTRADOR | `{ rol }` → el usuario. Solo cuentas aprobadas; cierra las sesiones de esa persona; mismo rol no hace nada. 400 si es el propio rol o el valor no es un rol; 404; 409 si la cuenta no está aprobada |
+| POST | `/admin/usuarios/{id}/desactivar` | ADMINISTRADOR | `activo` pasa a `false` y se cierran sus sesiones; el login responde 403. 400 si es la propia cuenta; 404; 409 si ya está desactivada o no está aprobada |
+| POST | `/admin/usuarios/{id}/reactivar` | ADMINISTRADOR | `activo` pasa a `true`; las sesiones anteriores no reviven. 404; 409 si ya está activa o no está aprobada |
 | POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
 | GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
 | GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |
