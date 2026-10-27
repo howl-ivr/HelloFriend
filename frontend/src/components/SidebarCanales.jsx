@@ -50,7 +50,7 @@ export default function SidebarCanales({ canales, activo, onElegir, onExplorar }
                   <CanalAvatar canal={c} />
                   <span className="min-w-0 leading-tight">
                     <span className="block text-sm font-semibold truncate">{nombre}</span>
-                    <span className="block text-xs text-suave">{codigo}</span>
+                    <span className="block text-xs text-suave">{codigo} · {c.periodo}</span>
                   </span>
                 </button>
               </li>
@@ -74,7 +74,7 @@ export function ChipsCanales({ canales, activo, onElegir, onExplorar }) {
       {canales.map(c => (
         <button key={c.id} onClick={() => onElegir(c.id)} className={chip(activo === c.id)}>
           <CanalAvatar canal={c} tamaño="sm" />
-          {partesCanal(c.nombre).codigo}
+          {partesCanal(c.nombre).codigo} <span className="font-normal opacity-70">{c.periodo}</span>
         </button>
       ))}
     </div>

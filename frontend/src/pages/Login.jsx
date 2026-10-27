@@ -9,7 +9,8 @@ const CUENTAS_DEMO = [
   ['alumno2', 'alumno123', 'Estudiante'],
   ['profesor', 'profesor123', 'Profesor'],
   ['director', 'director123', 'Director de carrera'],
-  ['admin', 'admin123', 'Administrador']
+  ['admin', 'admin123', 'Administrador'],
+  ['exalumno', 'alumno123', 'Cuenta desactivada (no puede ingresar)']
 ]
 
 export default function Login() {

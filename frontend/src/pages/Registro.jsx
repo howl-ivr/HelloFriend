@@ -38,11 +38,10 @@ export default function Registro() {
   if (listo) {
     return (
       <div className="max-w-sm mx-auto mt-10 bg-white rounded-2xl border border-linea p-6 text-center">
-        <p className="text-4xl mb-3">📨</p>
-        <h1 className="text-lg font-bold mb-2">Solicitud enviada</h1>
+        <p className="text-4xl mb-3">✅</p>
+        <h1 className="text-lg font-bold mb-2">Cuenta creada</h1>
         <p className="text-sm text-suave mb-5">
-          Un administrador verificará que eres alumno de la facultad y aprobará tu cuenta.
-          Después podrás ingresar con tu usuario <span className="font-mono font-semibold">{form.usuario}</span>.
+          Ya puedes ingresar con tu usuario <span className="font-mono font-semibold">{form.usuario}</span>.
         </p>
         <Link to="/login" className={claseBoton}>Ir al inicio de sesión</Link>
       </div>
@@ -58,7 +57,7 @@ export default function Registro() {
         <div>
           <label className="text-sm font-medium text-tinta">Correo PUCP</label>
           <input type="email" value={form.correo} onChange={set('correo')} placeholder="tu.nombre@pucp.edu.pe" required className={`${claseInput} mt-1`} />
-          <p className="text-xs text-suave mt-1">Solo lo usa la administración para verificar que eres alumno de la facultad. No se muestra en la plataforma.</p>
+          <p className="text-xs text-suave mt-1">Solo lo usa la administración para gestionar cuentas. No se muestra en la plataforma.</p>
         </div>
         <div>
           <label className="text-sm font-medium text-tinta">Usuario</label>

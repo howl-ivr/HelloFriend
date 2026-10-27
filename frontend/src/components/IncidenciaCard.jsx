@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { AvatarAnonimo, CanalAvatar, EstadoBadge, Tarjeta } from './ui'
+import { AvatarAnonimo, CanalAvatar, CategoriaChip, EstadoBadge, PrioridadBadge, Tarjeta } from './ui'
 import BotonConfirmar from './BotonConfirmar'
 import Reacciones from './Reacciones'
 import { fechaHora, hace, partesCanal } from '../utils/formato'
@@ -18,7 +18,7 @@ export default function IncidenciaCard({ incidencia, onElegirCanal }) {
             onClick={() => onElegirCanal?.(i.canal.id)}
             className="font-semibold text-sm hover:underline truncate max-w-full text-left"
           >
-            {nombre} <span className="text-suave font-normal">{codigo}</span>
+            {nombre} <span className="text-suave font-normal">{codigo} · {i.canal.periodo}</span>
           </button>
           <p className="flex items-center gap-1.5 text-xs text-suave mt-0.5">
             <AvatarAnonimo tamaño="sm" />
@@ -27,13 +27,18 @@ export default function IncidenciaCard({ incidencia, onElegirCanal }) {
             <time dateTime={i.fechaCreacion} title={fechaHora(i.fechaCreacion)}>{hace(i.fechaCreacion)}</time>
           </p>
         </div>
-        {i.estado === 'RESUELTA' && <EstadoBadge estado={i.estado} />}
+        {i.estado !== 'PUBLICADA' && <EstadoBadge estado={i.estado} />}
       </header>
 
       <Link to={`/incidencias/${i.id}`} className="group block">
         <h3 className="text-lg font-bold leading-snug group-hover:text-marca transition-colors">{i.titulo}</h3>
         <p className="text-[15px] leading-relaxed text-tinta/85 mt-1 line-clamp-4">{i.descripcion}</p>
       </Link>
+
+      <div className="flex flex-wrap items-center gap-1.5 mt-3">
+        <PrioridadBadge prioridad={i.prioridad} />
+        <CategoriaChip categoria={i.categoria} />
+      </div>
 
       <footer className="flex flex-wrap items-center gap-1 mt-4 pt-3 border-t border-linea">
         <BotonConfirmar incidencia={i} compacto />

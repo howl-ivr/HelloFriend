@@ -1,16 +1,59 @@
-# React + Vite
+# HelloFriend · Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Portal web de reporte anónimo de incidencias por curso para la facultad. React 19, Vite y Tailwind 4.
 
-Currently, two official plugins are available:
+## Cómo correrlo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Requiere Node 20.19 o superior.
 
-## React Compiler
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+La app queda en http://localhost:5173.
 
-## Expanding the ESLint configuration
+## Modo demostración y modo backend
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+El archivo `.env.development` define `VITE_MOCK`:
+
+- `VITE_MOCK=true`: los datos se simulan en el navegador (se guardan en localStorage). No hace falta backend.
+- `VITE_MOCK=false`: las llamadas a `/api` van al backend Spring Boot en http://localhost:8080 (ver `vite.config.js`).
+
+El contrato que debe respetar el backend está en `../docs/API.md`.
+
+Cuentas del modo demostración:
+
+| Usuario | Contraseña | Rol |
+|---|---|---|
+| alumno1 a alumno5 | alumno123 | Estudiante |
+| cachimbo26 | nuevo123 | Estudiante recién registrado |
+| profesor | profesor123 | Profesor |
+| director | director123 | Director de carrera |
+| admin | admin123 | Administrador |
+| exalumno | alumno123 | Cuenta desactivada (no puede ingresar) |
+
+Para reiniciar los datos simulados: `localStorage.removeItem('hf_mock_db_v3')` en la consola del navegador.
+
+## Scripts
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` | Compila a `dist/` |
+| `npm run preview` | Sirve la compilación |
+| `npm run lint` | Revisa el código con ESLint |
+
+## Estructura
+
+```
+src/
+  api/         cliente axios (client.js) y backend simulado (mock.js)
+  components/  piezas reutilizables (tarjetas, botones, navbar, paneles)
+  context/     sesión del usuario (AuthContext)
+  pages/       una pantalla por ruta, agrupadas por rol
+  utils/       formato de fechas, estados y textos compartidos
+```
+
+Rutas por rol: estudiante y profesor usan `/inicio`; el estudiante además `/incidencias/nueva`, `/incidencias/:id/editar` y `/mis-incidencias`; el director `/director/*` (pendientes, publicadas y estadísticas); el administrador `/admin/*` (usuarios, canales y auditoría). La protección está en `components/RutaProtegida.jsx`.

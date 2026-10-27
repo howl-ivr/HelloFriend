@@ -1,29 +1,41 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import api from '../api/client'
-import { Cargando, Titulo, Vacio, claseBotonSecundario } from '../components/ui'
+import api, { mensajeError } from '../api/client'
+import { Alerta, Cargando, Titulo, Vacio, claseBotonSecundario } from '../components/ui'
 import { hace } from '../utils/formato'
 
 export default function Notificaciones() {
   const [lista, setLista] = useState(null)
+  const [error, setError] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
-    api.get('/notificaciones').then(r => setLista(r.data))
+    api.get('/notificaciones').then(r => setLista(r.data)).catch(e => setError(mensajeError(e)))
   }, [])
 
   const abrir = async n => {
-    if (!n.leida) await api.patch(`/notificaciones/${n.id}/leida`)
+    setError('')
+    try {
+      if (!n.leida) await api.patch(`/notificaciones/${n.id}/leida`)
+    } catch (err) {
+      setError(mensajeError(err))
+      return
+    }
     if (n.incidenciaId) navigate(`/incidencias/${n.incidenciaId}`)
     else setLista(l => l.map(x => (x.id === n.id ? { ...x, leida: true } : x)))
   }
 
   const marcarTodas = async () => {
-    await api.patch('/notificaciones/leidas')
-    setLista(l => l.map(n => ({ ...n, leida: true })))
+    setError('')
+    try {
+      await api.patch('/notificaciones/leidas')
+      setLista(l => l.map(n => ({ ...n, leida: true })))
+    } catch (err) {
+      setError(mensajeError(err))
+    }
   }
 
-  if (!lista) return <Cargando />
+  if (!lista) return error ? <Alerta>{error}</Alerta> : <Cargando />
   const hayNoLeidas = lista.some(n => !n.leida)
 
   return (
@@ -31,6 +43,8 @@ export default function Notificaciones() {
       <Titulo accion={hayNoLeidas && <button onClick={marcarTodas} className={claseBotonSecundario}>Marcar todas como leídas</button>}>
         Notificaciones
       </Titulo>
+
+      {error && <div className="mb-4"><Alerta>{error}</Alerta></div>}
 
       {lista.length === 0 ? (
         <Vacio>No tienes notificaciones.</Vacio>

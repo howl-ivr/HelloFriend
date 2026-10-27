@@ -1,4 +1,4 @@
-import { ESTADOS, partesCanal, tonoCanal } from '../utils/formato'
+import { ESTADOS, PRIORIDADES, partesCanal, tonoCanal } from '../utils/formato'
 
 export function Cargando({ texto = 'Cargando...' }) {
   return <p className="text-center text-suave py-10">{texto}</p>
@@ -25,6 +25,27 @@ export function EstadoBadge({ estado }) {
   const e = ESTADOS[estado]
   if (!e) return null
   return <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${e.clase}`}>{e.etiqueta}</span>
+}
+
+export function PrioridadBadge({ prioridad }) {
+  const p = PRIORIDADES[prioridad]
+  if (!p) return null
+  return <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${p.clase}`}>{p.etiqueta}</span>
+}
+
+export function CategoriaChip({ categoria }) {
+  if (!categoria) return null
+  return <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap bg-fondo text-suave border border-linea">{categoria}</span>
+}
+
+// Autor de un reporte: solo llega en la respuesta para el director y el administrador
+export function Autor({ incidencia }) {
+  if (!incidencia.autor) return <span>Alumno anónimo{incidencia.esMia && ' (tú)'}</span>
+  return (
+    <span title="Solo lo ven la dirección de carrera y la administración">
+      Autor: <span className="font-semibold text-tinta">{incidencia.autor.usuario}</span>
+    </span>
+  )
 }
 
 export function Titulo({ children, subtitulo, accion }) {
