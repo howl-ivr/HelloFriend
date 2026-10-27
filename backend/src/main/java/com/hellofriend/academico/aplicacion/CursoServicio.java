@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hellofriend.academico.dominio.Curso;
 import com.hellofriend.academico.infraestructura.CursoRepositorio;
+import com.hellofriend.auditoria.aplicacion.ServicioAuditoria;
 import com.hellofriend.compartido.web.ExcepcionNegocio;
 
 /** Casos de uso del catalogo de cursos: crear, modificar, eliminar y consultar. */
@@ -20,19 +21,24 @@ public class CursoServicio {
 
 	private final CursoRepositorio repositorio;
 	private final Clock reloj;
+	private final ServicioAuditoria auditoria;
 
-	public CursoServicio(CursoRepositorio repositorio, Clock reloj) {
+	public CursoServicio(CursoRepositorio repositorio, Clock reloj, ServicioAuditoria auditoria) {
 		this.repositorio = repositorio;
 		this.reloj = reloj;
+		this.auditoria = auditoria;
 	}
 
-	public CursoDto crear(CursoSolicitud solicitud) {
+	/** Registra el curso y deja su huella en la auditoría con quien lo creó. */
+	public CursoDto crear(CursoSolicitud solicitud, String actorId) {
 		String codigo = codigoNormalizado(solicitud);
 		if (repositorio.existsByCodigo(codigo)) {
 			throw ExcepcionNegocio.conflicto("Ya existe un curso con el código " + codigo + ".");
 		}
 		LocalDateTime creadoEn = LocalDateTime.ofInstant(reloj.instant(), ZoneOffset.UTC);
-		return CursoDto.de(repositorio.saveAndFlush(new Curso(codigo, solicitud.nombre().trim(), creadoEn)));
+		CursoDto curso = CursoDto.de(repositorio.saveAndFlush(new Curso(codigo, solicitud.nombre().trim(), creadoEn)));
+		auditoria.registrar("CURSO_REGISTRADO", actorId, curso.codigo());
+		return curso;
 	}
 
 	public CursoDto modificar(String id, CursoSolicitud solicitud) {

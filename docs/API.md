@@ -113,7 +113,7 @@ Un token deja de valer al cerrar sesión, cambiar o restablecer la contraseña, 
 | GET | `/incidencias/{id}` | No visibles: solo autor o director · visibles: suscritos, autor o director · `403` para el administrador (usa `/admin/reportes/{id}`) |
 | GET | `/categorias` | `["Evaluaciones y notas", …]` (cualquier rol autenticado) |
 | GET | `/comentarios-predefinidos` | `[{ id, texto }]` |
-| GET | `/notificaciones` | `[{ id, incidenciaId, tipo, titulo, mensaje, leida, fecha }]`, las más nuevas primero (también director). `tipo`: `APROBADA`, `OBSERVADA`, `RECHAZADA`, `REENVIADA`, `EN_ATENCION` o `RESUELTA`. No marca nada como leído |
+| GET | `/notificaciones` | `[{ id, incidenciaId, tipo, titulo, mensaje, leida, fecha }]`, las más nuevas primero (también director). `tipo`: `NUEVA` (solo directores: hay una incidencia por revisar), `APROBADA`, `OBSERVADA`, `RECHAZADA`, `REENVIADA`, `EN_ATENCION` o `RESUELTA`. No marca nada como leído |
 | GET | `/notificaciones/no-leidas` | `{ total }`: cuántas sin leer tiene el usuario (el número de la campanita) |
 | PATCH | `/notificaciones/{id}/leida` | `204` · marcar dos veces no cambia nada · `404` si no existe o es de otro usuario |
 | PATCH | `/notificaciones/leidas?hasta=` | Marca como leídas las del usuario · `204`. `hasta` es opcional: la `fecha` de la notificación más nueva que se mostró, tal cual la devolvió el `GET`; marca solo las creadas hasta ese momento y deja sin leer las que llegaron mientras tanto. Sin `hasta` marca todas · `400` si la fecha no es válida |

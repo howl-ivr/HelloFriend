@@ -5,6 +5,6 @@ package com.hellofriend.notificaciones.dominio;
  */
 public enum TipoNotificacion {
 
-	APROBADA, OBSERVADA, RECHAZADA, REENVIADA, EN_ATENCION, RESUELTA
+	NUEVA, APROBADA, OBSERVADA, RECHAZADA, REENVIADA, EN_ATENCION, RESUELTA
 
 }

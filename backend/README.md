@@ -21,7 +21,7 @@ revisa también las variables de ejecución `DB_USER` y `SPRING_DATASOURCE_USERN
 | Variable | Para qué | Por defecto |
 | --- | --- | --- |
 | `DB_URL` | URL JDBC de MySQL | `jdbc:mysql://localhost:3306/hellofriend?...` |
-| `DB_USER` / `DB_PASSWORD` | Credenciales de la base | `DB_USER` obligatorio / contraseña vacía |
+| `DB_USER` / `DB_PASSWORD` | Credenciales de la base | `hellofriend` / contraseña vacía |
 | `TEST_DB_URL` | Base de las pruebas de integración (debe ser local y terminar en `_test`) | `.../hellofriend_test?...` |
 | `FLYWAY_LOCATIONS` | Dónde buscar migraciones al arrancar | `classpath:db/migration` |
 | `FLYWAY_URL` / `FLYWAY_USER` / `FLYWAY_PASSWORD` | Solo para `mvnw flyway:*` a mano (van en la terminal, no en `.env`) | sin valor |
@@ -63,6 +63,7 @@ Una migración ya subida nunca se edita.
 | `V2__modelo_incidencias.sql` | Columnas de sesión y recuperación en `usuarios_usuario`; tablas `academico_curso`, `canales_canal`, `canales_suscripcion`, `incidencias_categoria` (8 categorías cargadas), `incidencias_incidencia`, `incidencias_version`, `incidencias_observacion`, `incidencias_confirmacion`, `incidencias_historial_estado`, `notificaciones_notificacion` y la vista `auditoria_historial_incidencia` |
 | `V3__usuarios_estado_cuenta.sql` | Columna `estado` (`PENDIENTE`, `ACTIVA`, `RECHAZADA`; por defecto `ACTIVA`) en `usuarios_usuario`. **Sin uso:** el contrato eliminó la aprobación de cuentas y la entidad no la mapea; la base la rellena con `ACTIVA` |
 | `V4__incidencias_interaccion.sql` | Catálogos de motivos y comentarios, comentarios, reacciones, metadatos de revisión e historial, y eventos de auditoría |
+| `V5__notificaciones_tipo_nueva.sql` | Agrega el tipo `NUEVA` a las notificaciones (aviso a los directores al registrarse una incidencia) |
 
 Datos de prueba (usuarios demo con clave `Prueba#2026`, canales e incidencias en cada estado): `db/datos-prueba/R__datos_prueba.sql`. Solo se cargan si defines `FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/datos-prueba` en tu `.env` local o en un servidor de pruebas; nunca en producción. Las pruebas de integración no los cargan.
 
@@ -112,7 +113,29 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | PUT | `/incidencias/{id}/reaccion` | ESTUDIANTE | Agrega, cambia o quita la reacción |
 | GET | `/director/incidencias`, `/director/estadisticas` | DIRECTOR | Bandeja y estadísticas de incidencias |
 | POST | `/director/incidencias/{id}/{accion}` | DIRECTOR | `aprobar`, `observar`, `rechazar`, `atender` o `resolver` |
-| GET | `/admin/reportes`, `/admin/reportes/{id}`, `/admin/auditoria` | ADMINISTRADOR | Auditoría de reportes y actividad |
+| GET | `/admin/reportes`, `/admin/reportes/{id}` | ADMINISTRADOR | Reportes de incidencias |
+| GET | `/admin/auditoria` | ADMINISTRADOR | Eventos de auditoría (módulo `auditoria`) |
+
+## Datos de demostración (solo local)
+
+`src/main/resources/db/dev/R__datos_demo.sql` crea cuentas, un curso, un canal y tres incidencias para probar todos los
+roles. Flyway solo lo ve si se lo pides; las pruebas, el CI y RDS no lo cargan. Es repetible: se puede volver a correr sin
+duplicar nada.
+
+```powershell
+$env:FLYWAY_LOCATIONS = "classpath:db/migration,classpath:db/dev"
+.\mvnw.cmd spring-boot:run
+```
+
+| Usuario | Rol |
+| --- | --- |
+| `admin` | ADMINISTRADOR |
+| `director` | DIRECTOR |
+| `profesor` | PROFESOR |
+| `ana`, `luis` | ESTUDIANTE |
+
+Contraseña de todas: `Prueba123`. `ana` tiene una incidencia pendiente, una publicada (confirmada por `luis`) y una
+rechazada, en el canal INF263 2026-2.
 
 ## Formato y pruebas
 
