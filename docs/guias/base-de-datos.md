@@ -84,11 +84,13 @@ problema y usa `flyway:repair`, o recrea la base.
 | Restricciones | Prefijos `pk_`, `uq_`, `ck_`, `fk_`, `ix_` seguidos de tabla y columna: `uq_usuarios_usuario_correo`. Las pruebas de integración comprueban las reglas por ese nombre. |
 | Texto | Identificadores sin tildes ni ñ. |
 
-## 5. Plan de migraciones (hoy existen `V1` y `V2`)
+## 5. Plan de migraciones (hoy existen `V1`, `V2` y `V3`)
 
 > **Actualizado:** el modelo de incidencias se consolidó en una sola `V2__modelo_incidencias.sql` (excepción a la regla de
 > migraciones pequeñas, porque aún no se había subido nada). Reemplaza las filas V2 a V12 de abajo, que quedan solo como
-> historial del plan inicial. Las siguientes migraciones empiezan en `V3`. Motivos y cambios (periodo como columnas, tokens en
+> historial del plan inicial. `V3__usuarios_estado_cuenta.sql` agrega el estado de la cuenta (aprobación del administrador,
+> ver [`2026-10-27-usuarios-y-seguridad.md`](../decisiones/2026-10-27-usuarios-y-seguridad.md)); las siguientes migraciones
+> empiezan en `V4`. Motivos y cambios (periodo como columnas, tokens en
 > `usuarios_usuario`, auditoría como vista): [`2026-10-26-modelo-incidencias.md`](../decisiones/2026-10-26-modelo-incidencias.md).
 
 | N.º | Archivo | Tablas |

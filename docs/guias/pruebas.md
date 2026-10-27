@@ -84,10 +84,17 @@ que se deshace al terminar cada prueba.
 - **Nombres en español**, que digan qué se garantiza: `correoNoSePuedeRepetir`, no `test1`.
 - **No desactives pruebas** (`@Disabled`) para que pase el CI: se corrigen o se eliminan con una razón en el PR.
 
-## Pendiente para el módulo `usuarios`
+## Seguridad y correo en las pruebas
 
-Al incorporar Spring Security habrá que agregar `spring-security-test` al `pom.xml` y un método en
-`PruebaIntegracion` que entregue el token de un usuario de prueba, para llamar endpoints con un rol.
+- **Llamar un endpoint con un rol:** guarda un `Usuario` con ese rol y emite su token con `ServicioJwt.emitir(id, usuario,
+  rol, versionSesion)`; envíalo en `Authorization: Bearer ...`. Ejemplos: `CursoAccesoIT`, `AdminUsuarioIT`. Si la prueba
+  no trata de seguridad, basta `@WithMockUser(roles = "ADMINISTRADOR")` en la clase (como `CursoControladorIT`).
+- **Cada endpoint protegido** lleva una prueba sin token (401) y otra con un rol no permitido (403).
+- **Contraseñas:** en `application-test.properties` BCrypt usa costo 4 para que las pruebas no tarden.
+- **Correo:** se reemplaza el notificador con `@MockitoBean` y se lee el token que recibe (`RecuperacionIT`); el contenido
+  del mensaje se comprueba aparte con un `JavaMailSender` simulado (`NotificadorRecuperacionTests`).
+- **No uses `jdbc` para leer algo que cambió una entidad sin antes `repositorio.flush()`**: JDBC no dispara el volcado
+  de Hibernate y verías el valor anterior.
 
 ## Si el CI sale en rojo
 

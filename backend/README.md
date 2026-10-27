@@ -3,11 +3,12 @@
 API REST en **Java 21 + Spring Boot 4.1** con **MySQL 8.0**, Flyway, Spring Data JPA y Maven Wrapper. Formato con
 Spotless; pruebas unitarias con Surefire (`*Tests`) y de integración con Failsafe (`*IT`).
 
-> Estado: es solo el esqueleto (aplicación, reloj, configuración, migración `V1` y pruebas). No hay Spring Security ni
-> JWT todavía.
-> **Siguiente tarea:** implementar el módulo `usuarios` (registro, login con JWT, roles). Antes, alinear con el
-> frontend `docs/API.md` (en `origin/front/setup`), que hoy difiere de las historias de usuario: rol `ADMIN` frente a
-> `ADMINISTRADOR`, cuentas `PENDIENTE/ACTIVA/RECHAZADA` aprobadas por el admin, ids numéricos, error `{ "mensaje" }`.
+> Estado: están el catálogo de cursos y el módulo `usuarios` (registro con aprobación del administrador, login con JWT,
+> cierre de sesión, recuperación y cambio de contraseña, protección por rol). Diseño y decisiones pendientes:
+> [`docs/decisiones/2026-10-27-usuarios-y-seguridad.md`](../docs/decisiones/2026-10-27-usuarios-y-seguridad.md).
+> **Falta acordar con el frontend (`docs/API.md`, en `origin/front/setup`):** rol `ADMIN` frente a `ADMINISTRADOR`, ids
+> numéricos frente a UUID, y los endpoints que el contrato aún no incluye (`/auth/me`, `/auth/logout`, `/auth/recuperar`,
+> `/auth/restablecer`, `/auth/me/contrasena`).
 
 ## Cómo arrancar
 
@@ -28,7 +29,10 @@ Todo sale de variables de entorno (o de `backend/.env`, que las variables reales
 | `FLYWAY_URL` / `FLYWAY_USER` / `FLYWAY_PASSWORD` | Solo para `mvnw flyway:*` a mano (van en la terminal, no en `.env`) | sin valor |
 | `PORT` | Puerto HTTP | `8080` |
 | `CORS_ORIGINS` | Orígenes del frontend permitidos | `http://localhost:5173` |
-| `JWT_SECRET` | Secreto de los tokens (aún sin uso; mínimo 32 caracteres) | valor de desarrollo |
+| `JWT_SECRET` | Secreto que firma los tokens (mínimo 32 bytes). **Obligatorio cambiarlo fuera de local**: quien lo conozca puede fabricar un token de administrador | valor de desarrollo |
+| `JWT_HORAS` | Horas de vigencia del token | `8` |
+| `FRONTEND_URL` | Dónde abre el enlace del correo de recuperación (`/restablecer?token=...`) | `http://localhost:5173` |
+| `RECUPERACION_MINUTOS` | Minutos de vigencia del enlace de recuperación | `30` |
 | `MAIL_HOST` / `MAIL_PORT` / `MAIL_USER` / `MAIL_PASSWORD` / `MAIL_FROM` | Correo (en local, Mailpit) | `localhost` / `1025` |
 
 Nunca se usan credenciales de RDS en un equipo de desarrollo ni en el CI.
@@ -38,7 +42,7 @@ Nunca se usan credenciales de RDS en un equipo de desarrollo ni en el CI.
 ```
 src/main/java/com/hellofriend/
 ├── HelloFriendAplicacion.java
-├── compartido/            # reloj (Clock America/Lima) y, más adelante, seguridad, errores y paginación
+├── compartido/            # reloj (Clock America/Lima), seguridad (JWT, BCrypt, roles), errores y @Async; luego, paginación
 └── {modulo}/              # uno por módulo: dominio, aplicacion, infraestructura, web
 src/main/resources/
 ├── application.properties
