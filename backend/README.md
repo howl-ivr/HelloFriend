@@ -64,11 +64,17 @@ Datos de prueba (usuarios demo con clave `Prueba#2026`, canales e incidencias en
 
 ## API
 
-Prefijo `/api`. Aún no hay endpoints de negocio, solo los de Actuator.
+Prefijo `/api`. Errores en JSON `{ "mensaje": "..." }` (formato de `docs/API.md`). Aún no hay seguridad: la columna Rol
+indica el rol que se exigirá cuando exista el módulo `usuarios`.
 
 | Método | Ruta | Rol | Qué hace |
 | --- | --- | --- | --- |
 | GET | `/actuator/health` | público | Estado de la aplicación |
+| POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
+| GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
+| GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |
+| PUT | `/admin/cursos/{id}` | ADMINISTRADOR | Modifica código y nombre (el id no cambia); 409 si el código es de otro curso |
+| DELETE | `/admin/cursos/{id}` | ADMINISTRADOR | Elimina el curso; 204; 409 si tiene canales |
 
 ## Formato y pruebas
 
