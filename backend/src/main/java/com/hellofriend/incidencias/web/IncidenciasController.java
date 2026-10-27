@@ -192,7 +192,11 @@ public class IncidenciasController {
 		jdbc.update("INSERT IGNORE INTO canales_suscripcion (id, canal_id, usuario_id, creada_en) VALUES (?, ?, ?, ?)",
 				UUID.randomUUID().toString(), canalId, actor, fecha);
 		auditar("INCIDENCIA_REGISTRADA", actor, id, null);
-		return respuesta(buscar(id), auth, false);
+		Map<String, Object> registrada = buscar(id);
+		avisos.notificar(directores(), TipoNotificacion.NUEVA, id, canalId, "Nueva incidencia pendiente",
+				"Hay una nueva incidencia pendiente de revisión en " + registrada.get("curso_codigo") + " · "
+						+ registrada.get("curso_nombre") + ".");
+		return respuesta(registrada, auth, false);
 	}
 
 	@PutMapping("/incidencias/{id}")
