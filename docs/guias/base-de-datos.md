@@ -20,7 +20,10 @@ GRANT ALL PRIVILEGES ON hellofriend.*      TO 'hellofriend'@'localhost';
 GRANT ALL PRIVILEGES ON hellofriend_test.* TO 'hellofriend'@'localhost';
 ```
 
-Luego copia `backend/.env.example` como `backend/.env` y completa `DB_PASSWORD`.
+Luego copia `backend/.env.example` como `backend/.env` y completa `DB_PASSWORD` y `TEST_DB_PASSWORD` con
+la clave de tu usuario local. Si usas usuarios distintos para cada base, ajusta también `DB_USER` y
+`TEST_DB_USER`. Las pruebas de integración usan solo las variables `TEST_DB_*`; si la aplicación usa una
+base remota, configura igualmente una base `_test` en MySQL local para ejecutar `verify`.
 
 ### Con Docker (opcional)
 
@@ -63,6 +66,15 @@ problema y usa `flyway:repair`, o recrea la base.
 
 ## 3. Cómo se escriben las migraciones
 
+### Ciclos de los cursos de Informática
+
+La migración `V6__academico_ciclo_cursos.sql` agrega `academico_curso.ciclo` y etiqueta los cursos ya existentes
+de los ciclos 5 a 10 del plan 2026-2. Los demás se muestran como **Electivos** (`ciclo = NULL`). Si importas los cursos
+**después** de que Flyway aplique V6, ejecuta en tu MySQL **local**
+`backend/scripts/etiquetar_ciclos_informatica_2026_2.sql` para asignarles el ciclo; puedes repetirlo sin
+duplicar datos. Comprueba el resultado con el `SELECT` incluido al final del script.
+
+
 - Archivo `V{n}__{modulo}_{tema}.sql` en `backend/src/main/resources/db/migration/`, por ejemplo `V2__usuarios_tokens.sql`.
 - **Una migración ya subida (a `develop` o `main`) nunca se edita**: el cambio va en una migración nueva. Flyway guarda
   una huella de cada archivo y falla si cambia.
@@ -84,13 +96,13 @@ problema y usa `flyway:repair`, o recrea la base.
 | Restricciones | Prefijos `pk_`, `uq_`, `ck_`, `fk_`, `ix_` seguidos de tabla y columna: `uq_usuarios_usuario_correo`. Las pruebas de integración comprueban las reglas por ese nombre. |
 | Texto | Identificadores sin tildes ni ñ. |
 
-## 5. Plan de migraciones (hoy existen `V1`, `V2` y `V3`)
+## 5. Plan de migraciones (hoy existen `V1` a `V6`)
 
 > **Actualizado:** el modelo de incidencias se consolidó en una sola `V2__modelo_incidencias.sql` (excepción a la regla de
 > migraciones pequeñas, porque aún no se había subido nada). Reemplaza las filas V2 a V12 de abajo, que quedan solo como
 > historial del plan inicial. `V3__usuarios_estado_cuenta.sql` agrega la columna `estado` (hoy sin uso: el registro es libre; ver la decisión de usuarios,
 > ver [`2026-10-27-usuarios-y-seguridad.md`](../decisiones/2026-10-27-usuarios-y-seguridad.md)); las siguientes migraciones
-> empiezan en `V4`. Motivos y cambios (periodo como columnas, tokens en
+> empezaron en `V4`; la lista actual está en [`backend/README.md`](../../backend/README.md). Motivos y cambios (periodo como columnas, tokens en
 > `usuarios_usuario`, auditoría como vista): [`2026-10-26-modelo-incidencias.md`](../decisiones/2026-10-26-modelo-incidencias.md).
 
 | N.º | Archivo | Tablas |

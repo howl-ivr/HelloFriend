@@ -55,6 +55,19 @@ class CursoControladorIT extends PruebaIntegracion {
 	}
 
 	@Test
+	void guardaYDevuelveElCicloDelCurso() throws Exception {
+		String cuerpo = crear("{\"codigo\":\"1INF36\",\"nombre\":\"Ética y RSU\",\"ciclo\":8}")
+				.andExpect(status().isCreated()).andExpect(jsonPath("$.ciclo").value(8)).andReturn().getResponse()
+				.getContentAsString();
+		String id = JsonPath.read(cuerpo, "$.id");
+		assertThat(jdbc.sql("SELECT ciclo FROM academico_curso WHERE id = ?").param(id).query(Integer.class).single())
+				.isEqualTo(8);
+		mvc.perform(get("/admin/cursos")).andExpect(jsonPath("$[0].ciclo").value(8));
+		modificar(id, "{\"codigo\":\"1INF36\",\"nombre\":\"Ética y RSU\"}").andExpect(status().isOk())
+				.andExpect(jsonPath("$.ciclo").value(8));
+	}
+
+	@Test
 	void ignoraElIdentificadorQueEnvieElCliente() throws Exception {
 		String cuerpo = crear("{\"id\":\"mio\",\"codigo\":\"INF263\",\"nombre\":\"Algoritmia\"}")
 				.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
@@ -78,6 +91,9 @@ class CursoControladorIT extends PruebaIntegracion {
 				.andExpect(jsonPath("$.mensaje").value("El nombre es obligatorio."));
 		crear("no es json").andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.mensaje").value("La solicitud está mal formada."));
+		crear("{\"codigo\":\"1INF36\",\"nombre\":\"Ética y RSU\",\"ciclo\":11}")
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje").value("El ciclo debe estar entre 1 y 10."));
 	}
 
 	// --- listar y buscar

@@ -39,11 +39,11 @@ ON DUPLICATE KEY UPDATE id = id;
 -- ---------------------------------------------------------------------
 -- Cursos y canales
 -- ---------------------------------------------------------------------
-INSERT INTO academico_curso (id, codigo, nombre, creado_en) VALUES
-    ('00000002-0000-0000-0000-000000000001', '1INF36', 'Ética y RSU en Ingeniería Informática', '2026-08-02 14:00:00'),
-    ('00000002-0000-0000-0000-000000000002', '1INF01', 'Fundamentos de Programación',            '2026-08-02 14:00:00'),
-    ('00000002-0000-0000-0000-000000000003', '1INF03', 'Bases de Datos',                         '2026-08-02 14:00:00'),
-    ('00000002-0000-0000-0000-000000000004', '1INF04', 'Ingeniería de Software',                 '2026-08-02 14:00:00')
+INSERT INTO academico_curso (id, codigo, nombre, ciclo, creado_en) VALUES
+    ('00000002-0000-0000-0000-000000000001', '1INF36', 'Ética y RSU en Ingeniería Informática', 8,    '2026-08-02 14:00:00'),
+    ('00000002-0000-0000-0000-000000000002', '1INF01', 'Fundamentos de Programación',            NULL, '2026-08-02 14:00:00'),
+    ('00000002-0000-0000-0000-000000000003', '1INF03', 'Bases de Datos',                         NULL, '2026-08-02 14:00:00'),
+    ('00000002-0000-0000-0000-000000000004', '1INF04', 'Ingeniería de Software',                 NULL, '2026-08-02 14:00:00')
 ON DUPLICATE KEY UPDATE id = id;
 
 -- Cuatro canales activos de 2026-2 y uno desactivado de 2026-1 (para probar RF-06.6).

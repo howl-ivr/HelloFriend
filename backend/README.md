@@ -8,7 +8,7 @@ El frontend consume esta API directamente. Los roles usan `ADMINISTRADOR` y los 
 ## Cómo arrancar
 
 1. MySQL local con las bases `hellofriend` y `hellofriend_test` (ver [`docs/guias/base-de-datos.md`](../docs/guias/base-de-datos.md)).
-2. Copia `.env.example` como `.env` y completa `DB_PASSWORD` (`.env` está ignorado por Git).
+2. Copia `.env.example` como `.env` y completa `DB_PASSWORD` para la aplicación y `TEST_DB_PASSWORD` para tu MySQL local de pruebas (`.env` está ignorado por Git).
 3. `.\mvnw.cmd spring-boot:run` arranca la API en <http://localhost:8080/api> (salud: `/api/actuator/health`).
 
 ## Configuración
@@ -23,6 +23,7 @@ revisa también las variables de ejecución `DB_USER` y `SPRING_DATASOURCE_USERN
 | `DB_URL` | URL JDBC de MySQL | `jdbc:mysql://localhost:3306/hellofriend?...` |
 | `DB_USER` / `DB_PASSWORD` | Credenciales de la base | `hellofriend` / contraseña vacía |
 | `TEST_DB_URL` | Base de las pruebas de integración (debe ser local y terminar en `_test`) | `.../hellofriend_test?...` |
+| `TEST_DB_USER` / `TEST_DB_PASSWORD` | Credenciales **locales** de las pruebas; no se reutilizan `DB_USER` ni `DB_PASSWORD` | usuario `hellofriend` / contraseña vacía |
 | `FLYWAY_LOCATIONS` | Dónde buscar migraciones al arrancar | `classpath:db/migration` |
 | `FLYWAY_URL` / `FLYWAY_USER` / `FLYWAY_PASSWORD` | Solo para `mvnw flyway:*` a mano (van en la terminal, no en `.env`) | sin valor |
 | `PORT` | Puerto HTTP | `8080` |
@@ -64,6 +65,7 @@ Una migración ya subida nunca se edita.
 | `V3__usuarios_estado_cuenta.sql` | Columna `estado` (`PENDIENTE`, `ACTIVA`, `RECHAZADA`; por defecto `ACTIVA`) en `usuarios_usuario`. **Sin uso:** el contrato eliminó la aprobación de cuentas y la entidad no la mapea; la base la rellena con `ACTIVA` |
 | `V4__incidencias_interaccion.sql` | Catálogos de motivos y comentarios, comentarios, reacciones, metadatos de revisión e historial, y eventos de auditoría |
 | `V5__notificaciones_tipo_nueva.sql` | Agrega el tipo `NUEVA` a las notificaciones (aviso a los directores al registrarse una incidencia) |
+| `V6__academico_ciclo_cursos.sql` | Añade `ciclo` al catálogo de cursos y etiqueta los cursos obligatorios de Informática de los ciclos 5 a 10 del plan 2026-2 |
 
 Datos de prueba (usuarios demo con clave `Prueba#2026`, canales e incidencias en cada estado): `db/datos-prueba/R__datos_prueba.sql`. Solo se cargan si defines `FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/datos-prueba` en tu `.env` local o en un servidor de pruebas; nunca en producción. Las pruebas de integración no los cargan.
 
@@ -91,10 +93,10 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | GET | `/notificaciones/no-leidas` | autenticado | `{ total }`: cuántas notificaciones sin leer tengo (el número de la campanita). Cuenta solo las mías; sin avisos devuelve 0 |
 | PATCH | `/notificaciones/{id}/leida` | autenticado | 204. Marcar dos veces no cambia la fecha. 404 si no existe **o es de otra persona** (no se revela cuál) |
 | PATCH | `/notificaciones/leidas[?hasta=]` | autenticado | 204. Marca mis no leídas. Con `?hasta=` (la `fecha` del aviso más nuevo que se mostró, tal cual la devuelve la API) solo las creadas hasta ese momento, para que lo que llegó mientras miraba el panel siga sin leer; sin él, todas. Una fecha inválida da 400 |
-| POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
-| GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
+| POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre, ciclo? }`. `ciclo` es 1 a 10 o `null` para Electivos. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
+| GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos con `ciclo`, ordenados por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
 | GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |
-| PUT | `/admin/cursos/{id}` | ADMINISTRADOR | Modifica código y nombre (el id no cambia); 409 si el código es de otro curso |
+| PUT | `/admin/cursos/{id}` | ADMINISTRADOR | Modifica código y nombre; un ciclo numérico actualiza el ciclo y su omisión conserva el valor anterior (el id no cambia); 409 si el código es de otro curso |
 | DELETE | `/admin/cursos/{id}` | ADMINISTRADOR | Elimina el curso; 204; 409 si tiene canales |
 | GET | `/periodos` | DIRECTOR, ADMINISTRADOR | Periodos con canales registrados |
 | GET | `/canales`, `/canales/{id}` | ESTUDIANTE, PROFESOR | Canales con suscripción y contadores del usuario |

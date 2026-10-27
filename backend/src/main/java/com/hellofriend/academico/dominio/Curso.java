@@ -11,7 +11,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 /**
  * Curso del catalogo permanente (tabla {@code academico_curso}). El identificador se genera solo y no se puede
- * cambiar; el codigo y el nombre si se pueden editar.
+ * cambiar; el codigo, el nombre y el ciclo si se pueden editar.
  */
 @Entity
 @Table(name = "academico_curso")
@@ -28,6 +28,9 @@ public class Curso {
 	@Column(name = "nombre", nullable = false, length = 150)
 	private String nombre;
 
+	@Column(name = "ciclo")
+	private Integer ciclo;
+
 	/** Fecha de creacion en UTC. */
 	@Column(name = "creado_en", nullable = false, updatable = false)
 	private LocalDateTime creadoEn;
@@ -35,15 +38,17 @@ public class Curso {
 	protected Curso() {
 	}
 
-	public Curso(String codigo, String nombre, LocalDateTime creadoEn) {
+	public Curso(String codigo, String nombre, Integer ciclo, LocalDateTime creadoEn) {
 		this.codigo = codigo;
 		this.nombre = nombre;
+		this.ciclo = ciclo;
 		this.creadoEn = creadoEn;
 	}
 
-	public void editar(String codigo, String nombre) {
+	public void editar(String codigo, String nombre, Integer ciclo) {
 		this.codigo = codigo;
 		this.nombre = nombre;
+		this.ciclo = ciclo;
 	}
 
 	public String getId() {
@@ -56,6 +61,10 @@ public class Curso {
 
 	public String getNombre() {
 		return nombre;
+	}
+
+	public Integer getCiclo() {
+		return ciclo;
 	}
 
 	public LocalDateTime getCreadoEn() {

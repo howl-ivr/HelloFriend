@@ -15,6 +15,9 @@ Surefire corre `*Tests`; Failsafe corre `*IT`. Un archivo que no termine en `Tes
 
 Primera vez: necesitas las bases `hellofriend` y `hellofriend_test` y tu `backend/.env`
 (ver [`base-de-datos.md`](base-de-datos.md)). Flyway aplica las migraciones solo al correr las pruebas.
+Configura `TEST_DB_URL`, `TEST_DB_USER` y `TEST_DB_PASSWORD` para tu MySQL local. Estas variables son independientes
+de `DB_URL`, `DB_USER` y `DB_PASSWORD`: la aplicación puede usar otra base sin que `verify` intente autenticar las
+pruebas con sus credenciales. No uses una base remota para las pruebas.
 
 ## Dónde van
 

@@ -162,8 +162,8 @@ Los filtros se aplican a la fecha de registro de la incidencia y al periodo de s
 | PUT | `/admin/usuarios/{id}/rol` | `{ rol }` | Asigna el rol · `403` si es su propia cuenta |
 | POST | `/admin/usuarios/{id}/desactivar` | — | `403` si es su propia cuenta · `409` si ya está desactivada |
 | POST | `/admin/usuarios/{id}/reactivar` | — | La cuenta vuelve a `ACTIVA`; las sesiones anteriores no reviven (debe iniciar sesión) · `409` si ya está activa |
-| GET | `/admin/cursos?periodo=` | — | `[{ id, codigo, nombre, tieneCanal }]` · `tieneCanal` indica si el curso ya tiene canal en ese periodo |
-| POST | `/admin/cursos` | `{ codigo, nombre }` | Registra un curso nuevo · código 3 a 10 letras o números, único (`409`) · `201` |
+| GET | `/admin/cursos?periodo=` | — | `[{ id, codigo, nombre, ciclo, tieneCanal }]` · `ciclo` es 1–10 o `null` para Electivos · `tieneCanal` indica si el curso ya tiene canal en ese periodo |
+| POST | `/admin/cursos` | `{ codigo, nombre, ciclo? }` | Registra un curso nuevo · `ciclo` opcional, de 1 a 10 · código 3 a 10 letras o números, único (`409`) · `201` |
 | GET | `/admin/canales?periodo=` | — | Canal + `fechaCreacion`, `totalPendientes` · más recientes primero |
 | POST | `/admin/canales` | `{ periodo, cursoIds: [] }` | Crea un canal por curso para el periodo · `409` si alguno ya tiene canal en ese periodo · nombre `"{codigo} · {nombre}"` · `201` lista de Canal |
 | POST | `/admin/canales/{id}/desactivar` | — | `409` si ya está desactivado |
