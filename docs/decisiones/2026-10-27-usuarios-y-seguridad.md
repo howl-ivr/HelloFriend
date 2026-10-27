@@ -45,12 +45,22 @@
 - **401 y 403 salen como `{ "mensaje": "..." }` desde la cadena de seguridad**, no desde `ManejadorErrores`, porque ocurren antes
   de Spring MVC.
 
+## Estado de la integración (2026-10-27)
+
+| Qué | Dónde | Estado |
+| --- | --- | --- |
+| Backend de usuarios y seguridad | rama `feat/usuarios-seguridad` (subida) → PR hacia `develop` | PR **por abrir**; sin conflictos con `develop` |
+| Endpoints nuevos documentados en el contrato | rama `docs/api-usuarios-auth` (subida) → PR hacia `front/setup` | PR **por abrir**; la revisa quien lleva el frontend |
+| Rol del administrador: `ADMIN` (contrato) o `ADMINISTRADOR` (backend y V1) | — | **Sin decidir.** Hoy el login devuelve `ADMINISTRADOR`; el frontend debe leer ese valor o se cambia el backend |
+| Ids: numéricos (contrato) o UUID (backend) | — | **Sin decidir.** Hoy son UUID de 36 caracteres |
+| Conflictos entre esta rama y `main` | `main` tiene el revert del PR #4 (modelo de incidencias) | Se resuelve cuando `develop` se integre a `main`, no en estos PR |
+
 ## A coordinar con el equipo
 
 - Avisar que `V3` está tomada y que las siguientes migraciones empiezan en `V4`.
-- Frontend: acordar `ADMIN` frente a `ADMINISTRADOR`, ids numéricos frente a UUID, y agregar a `docs/API.md` los endpoints que
-  faltan (`/auth/me`, `/auth/logout`, `/auth/recuperar`, `/auth/restablecer`, `/auth/me/contrasena`) y la ruta
-  `/restablecer?token=...` de la pantalla de recuperación.
+- Frontend: acordar `ADMIN` frente a `ADMINISTRADOR` y ids numéricos frente a UUID. Los endpoints `/auth/me`, `/auth/logout`,
+  `/auth/recuperar`, `/auth/restablecer`, `/auth/me/contrasena` y `/admin/usuarios/{id}/reactivar`, y la ruta
+  `/restablecer?token=...` de la pantalla de recuperación, ya están en `docs/API.md` de la rama `docs/api-usuarios-auth`.
 - Las fechas de la API salen en UTC (sin zona), igual que `/admin/cursos`; `docs/API.md` muestra ISO-8601 sin offset.
 - Aplicar la V3 en RDS es un paso aparte (ver `2026-10-26-equipo-despliegue-pendiente.md`).
 
