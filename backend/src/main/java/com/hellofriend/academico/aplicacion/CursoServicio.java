@@ -36,7 +36,8 @@ public class CursoServicio {
 			throw ExcepcionNegocio.conflicto("Ya existe un curso con el código " + codigo + ".");
 		}
 		LocalDateTime creadoEn = LocalDateTime.ofInstant(reloj.instant(), ZoneOffset.UTC);
-		CursoDto curso = CursoDto.de(repositorio.saveAndFlush(new Curso(codigo, solicitud.nombre().trim(), creadoEn)));
+		CursoDto curso = CursoDto.de(
+				repositorio.saveAndFlush(new Curso(codigo, solicitud.nombre().trim(), solicitud.ciclo(), creadoEn)));
 		auditoria.registrar("CURSO_REGISTRADO", actorId, curso.codigo());
 		return curso;
 	}
@@ -47,7 +48,8 @@ public class CursoServicio {
 		if (repositorio.existsByCodigoAndIdNot(codigo, id)) {
 			throw ExcepcionNegocio.conflicto("Ya existe un curso con el código " + codigo + ".");
 		}
-		curso.editar(codigo, solicitud.nombre().trim());
+		curso.editar(codigo, solicitud.nombre().trim(),
+				solicitud.ciclo() != null ? solicitud.ciclo() : curso.getCiclo());
 		return CursoDto.de(repositorio.saveAndFlush(curso));
 	}
 

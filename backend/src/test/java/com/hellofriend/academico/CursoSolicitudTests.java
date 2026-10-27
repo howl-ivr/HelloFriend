@@ -14,11 +14,15 @@ import com.hellofriend.academico.aplicacion.CursoSolicitud;
 /** Validaciones de los datos de un curso, sin Spring ni base de datos. */
 class CursoSolicitudTests {
 
-	private List<String> errores(String codigo, String nombre) {
+	private List<String> errores(String codigo, String nombre, Integer ciclo) {
 		try (var fabrica = Validation.buildDefaultValidatorFactory()) {
-			return fabrica.getValidator().validate(new CursoSolicitud(codigo, nombre)).stream()
+			return fabrica.getValidator().validate(new CursoSolicitud(codigo, nombre, ciclo)).stream()
 					.map(ConstraintViolation::getMessage).sorted().toList();
 		}
+	}
+
+	private List<String> errores(String codigo, String nombre) {
+		return errores(codigo, nombre, null);
 	}
 
 	@Test
@@ -48,6 +52,14 @@ class CursoSolicitudTests {
 		assertThat(errores("INF263", "x".repeat(151)))
 				.containsExactly("El nombre no puede superar los 150 caracteres.");
 		assertThat(errores("INF263", "x".repeat(150))).isEmpty();
+	}
+
+	@Test
+	void cicloEsOpcionalPeroDebeEstarEntreUnoYDiez() {
+		assertThat(errores("1INF36", "Ética y RSU", null)).isEmpty();
+		assertThat(errores("1INF36", "Ética y RSU", 8)).isEmpty();
+		assertThat(errores("1INF36", "Ética y RSU", 0)).containsExactly("El ciclo debe estar entre 1 y 10.");
+		assertThat(errores("1INF36", "Ética y RSU", 11)).containsExactly("El ciclo debe estar entre 1 y 10.");
 	}
 
 }
