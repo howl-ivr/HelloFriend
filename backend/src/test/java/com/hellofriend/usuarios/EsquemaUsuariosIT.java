@@ -50,6 +50,21 @@ class EsquemaUsuariosIT extends PruebaIntegracion {
 	}
 
 	@Test
+	void sinIndicarEstadoLaCuentaQuedaActiva() {
+		insertar("ana@pucp.edu.pe", "ana", "ESTUDIANTE");
+
+		assertThat(jdbc.sql("SELECT estado FROM usuarios_usuario WHERE usuario = 'ana'").query(String.class).single())
+				.isEqualTo("ACTIVA");
+	}
+
+	@Test
+	void estadoDebeSerUnoDeLosPermitidos() {
+		rechazaPor("ck_usuarios_usuario_estado", () -> jdbc.sql(
+				"INSERT INTO usuarios_usuario (correo, usuario, contrasena_hash, rol, estado) VALUES ('a@pucp.edu.pe', 'a', 'hash', 'ESTUDIANTE', 'BLOQUEADA')")
+				.update());
+	}
+
+	@Test
 	void aceptaLosCuatroRoles() {
 		insertar("a@pucp.edu.pe", "a", "ESTUDIANTE");
 		insertar("b@pucp.edu.pe", "b", "PROFESOR");
