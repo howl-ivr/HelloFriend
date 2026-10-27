@@ -1,6 +1,12 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api' })
+// En local se usa el proxy de Vite (/api → localhost:8080).
+// En Vercel se define VITE_API_URL con la URL pública del backend, por ejemplo https://mi-backend.com/api
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  // Evita la página de aviso de ngrok cuando el backend está detrás de un túnel (no afecta en local).
+  headers: { 'ngrok-skip-browser-warning': '1' }
+})
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')

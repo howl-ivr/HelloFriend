@@ -118,6 +118,27 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | GET | `/admin/reportes`, `/admin/reportes/{id}` | ADMINISTRADOR | Reportes de incidencias |
 | GET | `/admin/auditoria` | ADMINISTRADOR | Eventos de auditoría (módulo `auditoria`) |
 
+## Datos de demostración (solo local)
+
+`src/main/resources/db/dev/R__datos_demo.sql` crea cuentas, un curso, un canal y tres incidencias para probar todos los
+roles. Flyway solo lo ve si se lo pides; las pruebas, el CI y RDS no lo cargan. Es repetible: se puede volver a correr sin
+duplicar nada.
+
+```powershell
+$env:FLYWAY_LOCATIONS = "classpath:db/migration,classpath:db/dev"
+.\mvnw.cmd spring-boot:run
+```
+
+| Usuario | Rol |
+| --- | --- |
+| `admin` | ADMINISTRADOR |
+| `director` | DIRECTOR |
+| `profesor` | PROFESOR |
+| `ana`, `luis` | ESTUDIANTE |
+
+Contraseña de todas: `Prueba123`. `ana` tiene una incidencia pendiente, una publicada (confirmada por `luis`) y una
+rechazada, en el canal INF263 2026-2.
+
 ## Formato y pruebas
 
 - `.\mvnw.cmd spotless:apply` formatea el código; `verify` falla si algo no está formateado.
