@@ -1,6 +1,6 @@
 # HelloFriend · Contrato de la API
 
-Base: `/api` · JSON · Autenticación con `Authorization: Bearer <JWT>` (excepto `/api/auth/**`).
+Base: `/api` · JSON · Autenticación con `Authorization: Bearer <JWT>` (excepto `/api/auth/registro`, `/login`, `/recuperar` y `/restablecer`).
 
 El frontend ya implementa este contrato en modo simulado (`frontend/src/api/mock.js`). Si el backend respeta
 rutas, campos y códigos de estado, basta con poner `VITE_MOCK=false` en `frontend/.env.development`.
@@ -86,8 +86,21 @@ Un canal vincula un curso con un periodo. Un canal desactivado conserva sus inci
 |---|---|---|---|
 | POST | `/auth/registro` | `{ correo, usuario, password }` | `201 { mensaje }` · la cuenta queda `ACTIVA` como `ESTUDIANTE` |
 | POST | `/auth/login` | `{ usuario, password }` | `{ token, usuario, rol }` · `401` credenciales · `403` cuenta desactivada |
+| POST | `/auth/recuperar` | `{ correo }` | `200 { mensaje }` **siempre**, exista o no el correo. Si es de una cuenta activa, envía un correo con el enlace `{FRONTEND_URL}/restablecer?token=…` (vence a los 30 min; pedir otro invalida el anterior) |
+| POST | `/auth/restablecer` | `{ token, password }` | `200 { mensaje }` · cambia la contraseña, consume el enlace (un solo uso) y cierra las sesiones abiertas · `400` si el enlace es desconocido, vencido o ya usado, o si el password no tiene de 6 a 64 caracteres |
 
-Validaciones de registro: correo termina en `@pucp.edu.pe` y es único; usuario `^[a-zA-Z0-9._-]{3,15}$`, único; password ≥ 6.
+Validaciones de registro: correo termina en `@pucp.edu.pe` y es único; usuario `^[a-zA-Z0-9._-]{3,15}$`, único; password ≥ 6 y como máximo 64 caracteres.
+
+La pantalla del enlace del correo es `/restablecer?token=…`: lee el `token` de la URL y lo envía a `/auth/restablecer` junto con la contraseña nueva.
+
+### Sesión (cualquier rol, con token)
+| Método | Ruta | Body | Respuesta |
+|---|---|---|---|
+| GET | `/auth/me` | — | `{ usuario, rol }` del usuario del token (nunca el correo) |
+| POST | `/auth/logout` | — | `204` · invalida **todos** los tokens del usuario, también los de otros dispositivos |
+| PUT | `/auth/me/contrasena` | `{ contrasenaActual, contrasenaNueva }` | `{ token, usuario, rol }` · cierra las demás sesiones y devuelve un **token nuevo**: el cliente debe guardarlo · `400` si la actual es incorrecta (no `401`, para no confundirlo con una sesión vencida), si la nueva es igual a la actual o no tiene de 6 a 64 caracteres |
+
+Un token deja de valer al cerrar sesión, cambiar o restablecer la contraseña, cambiar el rol o desactivar la cuenta: la siguiente petición responde `401` y el cliente debe volver al login.
 
 ### Estudiante y profesor
 | Método | Ruta | Notas |
@@ -102,9 +115,12 @@ Validaciones de registro: correo termina en `@pucp.edu.pe` y es único; usuario 
 | GET | `/incidencias/{id}` | No visibles: solo autor o director · visibles: suscritos, autor o director · `403` para el administrador (usa `/admin/reportes/{id}`) |
 | GET | `/categorias` | `["Evaluaciones y notas", …]` (cualquier rol autenticado) |
 | GET | `/comentarios-predefinidos` | `[{ id, texto }]` |
-| GET | `/notificaciones` | `[{ id, incidenciaId, mensaje, leida, fecha }]` (también director) |
-| PATCH | `/notificaciones/{id}/leida` | `204` |
-| PATCH | `/notificaciones/leidas` | Marca todas · `204` |
+| GET | `/notificaciones` | `[{ id, incidenciaId, tipo, titulo, mensaje, leida, fecha }]`, las más nuevas primero (también director). `tipo`: `APROBADA`, `OBSERVADA`, `RECHAZADA`, `REENVIADA`, `EN_ATENCION` o `RESUELTA`. No marca nada como leído |
+| GET | `/notificaciones/no-leidas` | `{ total }`: cuántas sin leer tiene el usuario (el número de la campanita) |
+| PATCH | `/notificaciones/{id}/leida` | `204` · marcar dos veces no cambia nada · `404` si no existe o es de otro usuario |
+| PATCH | `/notificaciones/leidas?hasta=` | Marca como leídas las del usuario · `204`. `hasta` es opcional: la `fecha` de la notificación más nueva que se mostró, tal cual la devolvió el `GET`; marca solo las creadas hasta ese momento y deja sin leer las que llegaron mientras tanto. Sin `hasta` marca todas · `400` si la fecha no es válida |
+
+**Panel de notificaciones:** al abrirlo, pedir `GET /notificaciones` y resaltar las de `leida: false`; al terminar de mirar, llamar a `PATCH /notificaciones/leidas?hasta={fecha de la más nueva mostrada}`. La campanita usa `GET /notificaciones/no-leidas`.
 
 ### Solo estudiante
 | Método | Ruta | Body | Notas |
@@ -147,6 +163,7 @@ Los filtros se aplican a la fecha de registro de la incidencia y al periodo de s
 | GET | `/admin/usuarios?buscar=&rol=` | — | `[{ id, usuario, correo, rol, estado, fechaRegistro }]` · `buscar` filtra por usuario o correo · `estado`: `ACTIVA` o `DESACTIVADA` |
 | PUT | `/admin/usuarios/{id}/rol` | `{ rol }` | Asigna el rol · `403` si es su propia cuenta |
 | POST | `/admin/usuarios/{id}/desactivar` | — | `403` si es su propia cuenta · `409` si ya está desactivada |
+| POST | `/admin/usuarios/{id}/reactivar` | — | La cuenta vuelve a `ACTIVA`; las sesiones anteriores no reviven (debe iniciar sesión) · `409` si ya está activa |
 | GET | `/admin/cursos?periodo=` | — | `[{ id, codigo, nombre, tieneCanal }]` · `tieneCanal` indica si el curso ya tiene canal en ese periodo |
 | POST | `/admin/cursos` | `{ codigo, nombre }` | Registra un curso nuevo · código 3 a 10 letras o números, único (`409`) · `201` |
 | GET | `/admin/canales?periodo=` | — | Canal + `fechaCreacion`, `totalPendientes` · más recientes primero |
