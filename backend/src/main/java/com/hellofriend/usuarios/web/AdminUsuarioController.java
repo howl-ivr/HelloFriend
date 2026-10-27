@@ -58,8 +58,8 @@ public class AdminUsuarioController {
 
 	/** Devuelve el acceso a una cuenta desactivada. Las sesiones anteriores no reviven: hay que iniciar sesión. */
 	@PostMapping("/{id}/reactivar")
-	public UsuarioResumenDto reactivar(@PathVariable String id) {
-		return servicio.reactivar(id);
+	public UsuarioResumenDto reactivar(@PathVariable String id, Authentication autenticacion) {
+		return servicio.reactivar(id, ServicioJwt.usuarioActual(autenticacion));
 	}
 
 }
