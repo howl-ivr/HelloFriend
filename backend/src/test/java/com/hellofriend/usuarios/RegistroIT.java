@@ -5,8 +5,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.time.LocalDateTime;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -20,7 +18,7 @@ import com.hellofriend.usuarios.dominio.Rol;
 import com.hellofriend.usuarios.dominio.Usuario;
 import com.hellofriend.usuarios.infraestructura.UsuarioRepositorio;
 
-/** POST /auth/registro: validaciones del contrato, cuenta PENDIENTE y bloqueo del login hasta la aprobación. */
+/** POST /auth/registro: validaciones del contrato y cuenta activa de inmediato (registro libre, sin aprobación). */
 class RegistroIT extends PruebaIntegracion {
 
 	private static final String CLAVE = "Clave#2026";
@@ -45,12 +43,12 @@ class RegistroIT extends PruebaIntegracion {
 	}
 
 	@Test
-	void registraUnaCuentaPendienteDeEstudiante() throws Exception {
+	void registraUnaCuentaActivaDeEstudiante() throws Exception {
 		registrar("Ana@PUCP.edu.pe", "ana.p", CLAVE).andExpect(status().isCreated())
 				.andExpect(jsonPath("$.mensaje").isNotEmpty());
 
 		Usuario ana = repositorio.findByUsuario("ana.p").orElseThrow();
-		assertThat(ana.getEstado()).isEqualTo(EstadoCuenta.PENDIENTE);
+		assertThat(ana.getEstado()).isEqualTo(EstadoCuenta.ACTIVA);
 		assertThat(ana.getRol()).isEqualTo(Rol.ESTUDIANTE);
 		assertThat(ana.isActivo()).isTrue();
 		assertThat(ana.getCorreo()).isEqualTo("ana@pucp.edu.pe");
@@ -118,22 +116,22 @@ class RegistroIT extends PruebaIntegracion {
 	}
 
 	@Test
-	void unaCuentaPendienteNoPuedeEntrar() throws Exception {
+	void unaCuentaRegistradaPuedeEntrarDeInmediatoSinAprobacion() throws Exception {
 		registrar("ana@pucp.edu.pe", "ana", CLAVE).andExpect(status().isCreated());
 
-		login("ana", CLAVE).andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.mensaje").value("Tu cuenta está pendiente de aprobación."));
-		login("ana", "otra-clave").andExpect(status().isUnauthorized());
+		login("ana", CLAVE).andExpect(status().isOk()).andExpect(jsonPath("$.usuario").value("ana"))
+				.andExpect(jsonPath("$.rol").value("ESTUDIANTE")).andExpect(jsonPath("$.token").isNotEmpty());
 	}
 
 	@Test
-	void unaCuentaRechazadaNoPuedeEntrar() throws Exception {
-		Usuario luis = Usuario.solicitud("luis@pucp.edu.pe", "luis", codificador.encode(CLAVE), LocalDateTime.now());
-		luis.rechazar();
+	void unaCuentaDesactivadaNoPuedeEntrar() throws Exception {
+		registrar("luis@pucp.edu.pe", "luis", CLAVE).andExpect(status().isCreated());
+		Usuario luis = repositorio.findByUsuario("luis").orElseThrow();
+		luis.desactivar();
 		repositorio.saveAndFlush(luis);
 
 		login("luis", CLAVE).andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.mensaje").value("Tu solicitud de registro fue rechazada."));
+				.andExpect(jsonPath("$.mensaje").value("Tu cuenta está desactivada."));
 	}
 
 }

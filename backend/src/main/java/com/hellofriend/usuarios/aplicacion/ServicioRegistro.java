@@ -14,7 +14,7 @@ import com.hellofriend.compartido.web.ExcepcionNegocio;
 import com.hellofriend.usuarios.dominio.Usuario;
 import com.hellofriend.usuarios.infraestructura.UsuarioRepositorio;
 
-/** Registro público de estudiantes: la cuenta queda PENDIENTE hasta que el administrador la apruebe. */
+/** Registro público de estudiantes: la cuenta queda activa de inmediato, sin aprobación del administrador. */
 @Service
 @Transactional
 public class ServicioRegistro {
@@ -42,7 +42,7 @@ public class ServicioRegistro {
 		LocalDateTime creadoEn = LocalDateTime.ofInstant(reloj.instant(), ZoneOffset.UTC);
 		try {
 			repositorio.saveAndFlush(
-					Usuario.solicitud(correo, usuario, contrasenas.encode(solicitud.password()), creadoEn));
+					Usuario.registrada(correo, usuario, contrasenas.encode(solicitud.password()), creadoEn));
 		} catch (DataIntegrityViolationException e) {
 			// Dos registros simultáneos con el mismo dato: lo frena la restricción UNIQUE de la base.
 			throw ExcepcionNegocio.conflicto("El usuario o el correo ya están registrados.");

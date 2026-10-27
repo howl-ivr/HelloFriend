@@ -1,7 +1,6 @@
 package com.hellofriend.usuarios;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -49,15 +48,13 @@ class GestionUsuarioIT extends PruebaIntegracion {
 	private Usuario admin;
 	private Usuario ana;
 	private Usuario marta;
-	private Usuario pedro;
 
 	@BeforeEach
 	void crearUsuarios() {
 		String hash = codificador.encode(CLAVE);
 		admin = repositorio.save(new Usuario("admin@pucp.edu.pe", "admin", hash, Rol.ADMINISTRADOR, INICIO));
 		ana = repositorio.save(new Usuario("ana@pucp.edu.pe", "ana", hash, Rol.ESTUDIANTE, INICIO));
-		marta = repositorio.save(new Usuario("marta@pucp.edu.pe", "marta", hash, Rol.PROFESOR, INICIO));
-		pedro = repositorio.saveAndFlush(Usuario.solicitud("pedro@pucp.edu.pe", "pedro", hash, INICIO));
+		marta = repositorio.saveAndFlush(new Usuario("marta@pucp.edu.pe", "marta", hash, Rol.PROFESOR, INICIO));
 	}
 
 	private String tokenDe(Usuario u) {
@@ -110,21 +107,6 @@ class GestionUsuarioIT extends PruebaIntegracion {
 		assertThat(ana.isActivo()).isTrue();
 	}
 
-	// --- listar por rol
-
-	@Test
-	void listaLosUsuariosDeOtroRolYMuestraSiEstanActivos() throws Exception {
-		como(admin, get("/admin/usuarios").param("rol", "PROFESOR")).andExpect(status().isOk())
-				.andExpect(jsonPath("$", hasSize(1))).andExpect(jsonPath("$[0].usuario").value("marta"))
-				.andExpect(jsonPath("$[0].rol").value("PROFESOR")).andExpect(jsonPath("$[0].activo").value(true))
-				.andExpect(jsonPath("$[0].correo").doesNotExist());
-	}
-
-	@Test
-	void unRolDesconocidoResponde400() throws Exception {
-		como(admin, get("/admin/usuarios").param("rol", "JEFE")).andExpect(status().isBadRequest());
-	}
-
 	// --- cambiar rol
 
 	@Test
@@ -132,7 +114,8 @@ class GestionUsuarioIT extends PruebaIntegracion {
 		String tokenViejo = tokenDe(ana);
 
 		cambiarRol(admin, ana, "PROFESOR").andExpect(status().isOk()).andExpect(jsonPath("$.usuario").value("ana"))
-				.andExpect(jsonPath("$.rol").value("PROFESOR"));
+				.andExpect(jsonPath("$.rol").value("PROFESOR"))
+				.andExpect(jsonPath("$.correo").value("ana@pucp.edu.pe"));
 
 		yo(tokenViejo).andExpect(status().isUnauthorized());
 		login("ana").andExpect(status().isOk()).andExpect(jsonPath("$.rol").value("PROFESOR"));
@@ -157,17 +140,11 @@ class GestionUsuarioIT extends PruebaIntegracion {
 	}
 
 	@Test
-	void nadiePuedeCambiarSuPropioRol() throws Exception {
-		cambiarRol(admin, admin, "ESTUDIANTE").andExpect(status().isBadRequest())
+	void nadiePuedeCambiarSuPropioRolYResponde403() throws Exception {
+		cambiarRol(admin, admin, "ESTUDIANTE").andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.mensaje").value("No puedes cambiar tu propio rol."));
 
 		assertThat(repositorio.findById(admin.getId()).orElseThrow().getRol()).isEqualTo(Rol.ADMINISTRADOR);
-	}
-
-	@Test
-	void soloSeCambiaElRolDeUnaCuentaAprobada() throws Exception {
-		cambiarRol(admin, pedro, "DIRECTOR").andExpect(status().isConflict())
-				.andExpect(jsonPath("$.mensaje").value("Solo se puede cambiar el rol de una cuenta aprobada."));
 	}
 
 	@Test
@@ -190,32 +167,29 @@ class GestionUsuarioIT extends PruebaIntegracion {
 	void desactivarCortaLaSesionBloqueaElLoginYSeVeEnLaLista() throws Exception {
 		String tokenViejo = tokenDe(ana);
 
-		desactivar(admin, ana).andExpect(status().isOk()).andExpect(jsonPath("$.activo").value(false))
-				.andExpect(jsonPath("$.estado").value("ACTIVA"));
+		desactivar(admin, ana).andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("DESACTIVADA"));
 
 		yo(tokenViejo).andExpect(status().isUnauthorized());
 		login("ana").andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.mensaje").value("Tu cuenta no está activa."));
-		como(admin, get("/admin/usuarios").param("estado", "ACTIVA")).andExpect(status().isOk())
-				.andExpect(jsonPath("$[0].usuario").value("ana")).andExpect(jsonPath("$[0].activo").value(false));
+				.andExpect(jsonPath("$.mensaje").value("Tu cuenta está desactivada."));
+		como(admin, get("/admin/usuarios").param("buscar", "ana")).andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].estado").value("DESACTIVADA"));
 	}
 
 	@Test
-	void nadiePuedeDesactivarSuPropiaCuenta() throws Exception {
-		desactivar(admin, admin).andExpect(status().isBadRequest())
+	void nadiePuedeDesactivarSuPropiaCuentaYResponde403() throws Exception {
+		desactivar(admin, admin).andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.mensaje").value("No puedes desactivar tu propia cuenta."));
 
 		assertThat(repositorio.findById(admin.getId()).orElseThrow().isActivo()).isTrue();
 	}
 
 	@Test
-	void desactivarDosVecesOUnaCuentaPendienteResponde409() throws Exception {
+	void desactivarDosVecesResponde409() throws Exception {
 		desactivar(admin, ana).andExpect(status().isOk());
 
 		desactivar(admin, ana).andExpect(status().isConflict())
 				.andExpect(jsonPath("$.mensaje").value("La cuenta ya está desactivada."));
-		desactivar(admin, pedro).andExpect(status().isConflict())
-				.andExpect(jsonPath("$.mensaje").value("Solo se puede desactivar una cuenta aprobada."));
 	}
 
 	@Test
@@ -223,18 +197,16 @@ class GestionUsuarioIT extends PruebaIntegracion {
 		String tokenViejo = tokenDe(ana);
 		desactivar(admin, ana).andExpect(status().isOk());
 
-		reactivar(admin, ana).andExpect(status().isOk()).andExpect(jsonPath("$.activo").value(true));
+		reactivar(admin, ana).andExpect(status().isOk()).andExpect(jsonPath("$.estado").value("ACTIVA"));
 
 		yo(tokenViejo).andExpect(status().isUnauthorized());
 		login("ana").andExpect(status().isOk());
 	}
 
 	@Test
-	void reactivarUnaCuentaActivaOPendienteResponde409() throws Exception {
+	void reactivarUnaCuentaActivaResponde409() throws Exception {
 		reactivar(admin, ana).andExpect(status().isConflict())
 				.andExpect(jsonPath("$.mensaje").value("La cuenta ya está activa."));
-		reactivar(admin, pedro).andExpect(status().isConflict())
-				.andExpect(jsonPath("$.mensaje").value("Solo se puede reactivar una cuenta aprobada."));
 	}
 
 	@Test
@@ -248,9 +220,17 @@ class GestionUsuarioIT extends PruebaIntegracion {
 	}
 
 	@Test
-	void desactivarUnUsuarioInexistenteResponde404() throws Exception {
+	void desactivarOReactivarUnUsuarioInexistenteResponde404() throws Exception {
 		como(admin, post("/admin/usuarios/no-existe/desactivar")).andExpect(status().isNotFound());
 		como(admin, post("/admin/usuarios/no-existe/reactivar")).andExpect(status().isNotFound());
+	}
+
+	// --- ya no hay aprobación
+
+	@Test
+	void aprobarYRechazarYaNoExisten() throws Exception {
+		como(admin, post("/admin/usuarios/" + ana.getId() + "/aprobar")).andExpect(status().isNotFound());
+		como(admin, post("/admin/usuarios/" + ana.getId() + "/rechazar")).andExpect(status().isNotFound());
 	}
 
 }

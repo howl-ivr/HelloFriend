@@ -1,8 +1,8 @@
 package com.hellofriend.usuarios.dominio;
 
-/** Flujo de aprobación de una cuenta nueva. Coincide con el CHECK de usuarios_usuario (V3) y con docs/API.md. */
+/** Estado de una cuenta en la API (docs/API.md). No se guarda: se deduce de {@code Usuario.activo}. */
 public enum EstadoCuenta {
 
-	PENDIENTE, ACTIVA, RECHAZADA
+	ACTIVA, DESACTIVADA
 
 }

@@ -2,9 +2,9 @@
 
 - **Autor:** equipo (rama `feat/usuarios-seguridad`)
 - **Fecha:** 2026-10-27
-- **Tarea:** registro con aprobación, login con JWT, cierre de sesión, recuperación y cambio de contraseña, y protección por rol
+- **Tarea:** registro libre, login con JWT, cierre de sesión, recuperación y cambio de contraseña, y protección por rol
 - **Estado:** implementado en la rama; pendiente de revisión del equipo
-- **Verificación:** `.\mvnw.cmd verify` en verde (151 pruebas: 33 unitarias y 118 de integración); nada se conectó a RDS
+- **Verificación:** `.\mvnw.cmd verify` en verde (152 pruebas: 33 unitarias y 119 de integración); nada se conectó a RDS
 
 ## Decisiones
 
@@ -20,19 +20,23 @@
   secretos sobrescriben `toString()` y ningún log ni respuesta los incluye.
 - **Login por nombre de usuario, no por correo.** Credenciales incorrectas y usuario inexistente dan el mismo 401 (se compara
   contra un hash ficticio para que tarden lo mismo). El estado de la cuenta (403) solo se revela a quien acierta la clave.
-- **V3: `usuarios_usuario.estado`** (`PENDIENTE`, `ACTIVA`, `RECHAZADA`, por defecto `ACTIVA`). El registro público crea la cuenta
-  `PENDIENTE` como ESTUDIANTE; el administrador la aprueba o rechaza (solo desde `PENDIENTE`) sin ver el correo. Se conserva
-  `activo` para desactivar una cuenta ya aprobada; para entrar hacen falta estado `ACTIVA` y `activo`.
+- **Registro libre (RF-01.4).** El registro público crea la cuenta `ACTIVA` como ESTUDIANTE, sin aprobación. Primero se implementó
+  con aprobación del administrador (V3, `usuarios_usuario.estado` con `PENDIENTE`, `ACTIVA`, `RECHAZADA`), pero `docs/API.md`
+  (PR #5 de `front/setup`, 2026-10-27) pasó a registro libre; se alineó el backend y se quitaron `/aprobar` y `/rechazar`.
+  **La columna `estado` de la V3 quedó sin uso:** la entidad no la mapea y la base la rellena con `ACTIVA`. No se editó la V3
+  (ya está en la rama subida); si se quiere quitar, hace falta una migración nueva (`V4`). La API expone `estado` (`ACTIVA` o
+  `DESACTIVADA`), que se deduce de `activo`.
 - **Recuperación de contraseña.** Token de 256 bits (`SecureRandom`); en la base solo su SHA-256, vence a los 30 minutos
   (`RECUPERACION_MINUTOS`) y se consume al usarlo. `/auth/recuperar` responde siempre 200 y solo envía correo a cuentas que
   pueden entrar. El correo sale en segundo plano (`@Async`) y no se escribe el token en el log. Restablecer cierra todas las
   sesiones.
 - **Cambio de contraseña con sesión.** Pide la actual (si falla, 400 y no 401, para no parecer sesión vencida), cierra todas las
   sesiones y devuelve un token nuevo. También anula un enlace de recuperación pendiente.
-- **Administración de cuentas.** El administrador puede cambiar el rol, desactivar y reactivar cuentas aprobadas (`/admin/usuarios`).
-  Cambiar el rol o desactivar cierra las sesiones de esa persona. Nadie puede cambiar su propio rol ni desactivarse, así siempre
-  queda al menos un administrador que pueda entrar. `GET /admin/usuarios` acepta `?rol=` (sin él, estudiantes, como el contrato) y
-  devuelve `activo`, un campo extra respecto de `docs/API.md`.
+- **Administración de cuentas.** El administrador lista, cambia el rol, desactiva y reactiva cuentas (`/admin/usuarios`). Cambiar el
+  rol o desactivar cierra las sesiones de esa persona (el contrato dice que el rol se aplica en el siguiente inicio de sesión;
+  aquí además el token viejo deja de valer). Nadie puede cambiar su propio rol ni desactivarse (403, como el contrato), así
+  siempre queda al menos un administrador que pueda entrar. `GET /admin/usuarios?buscar=&rol=` devuelve el correo, que solo el
+  ADMIN ve; `buscar` escapa los comodines de LIKE. `/reactivar` no está en el contrato: es un añadido.
 - **Rol del administrador: se mantiene `ADMINISTRADOR`** (es el valor del CHECK de V1); `docs/API.md` dice `ADMIN`.
 - **`JWT_SECRET` obligatorio fuera de local.** `application.properties` conserva un valor de desarrollo para no pedir configuración
   en tu PC, pero ese valor es público. `ValidadorSecretoJwt` impide arrancar si se usa y la base de datos no es local (`localhost`,

@@ -13,7 +13,9 @@ import org.hibernate.annotations.UuidGenerator;
 
 /**
  * Cuenta de acceso (tabla {@code usuarios_usuario}, V1 y V2). La contraseña se guarda solo como hash. El campo
- * {@code versionSesion} viaja en el token: al sumarle 1 los tokens emitidos antes dejan de valer.
+ * {@code versionSesion} viaja en el token: al sumarle 1 los tokens emitidos antes dejan de valer. La columna
+ * {@code estado} de la V3 no se mapea: la base la rellena con ACTIVA y ya no se usa (el contrato eliminó la
+ * aprobación).
  */
 @Entity
 @Table(name = "usuarios_usuario")
@@ -37,11 +39,7 @@ public class Usuario {
 	@Column(name = "rol", nullable = false, length = 20)
 	private Rol rol;
 
-	@Enumerated(EnumType.STRING)
-	@Column(name = "estado", nullable = false, length = 10)
-	private EstadoCuenta estado = EstadoCuenta.ACTIVA;
-
-	/** Desactivación de una cuenta ya aprobada; el flujo de aprobación está en {@code estado}. */
+	/** Una cuenta desactivada no inicia sesión y conserva su historial. */
 	@Column(name = "activo", nullable = false)
 	private boolean activo = true;
 
@@ -72,24 +70,14 @@ public class Usuario {
 		this.creadoEn = creadoEn;
 	}
 
-	/** Cuenta de un estudiante que se registró solo: queda PENDIENTE hasta que el administrador la apruebe. */
-	public static Usuario solicitud(String correo, String usuario, String contrasenaHash, LocalDateTime creadoEn) {
-		Usuario nueva = new Usuario(correo, usuario, contrasenaHash, Rol.ESTUDIANTE, creadoEn);
-		nueva.estado = EstadoCuenta.PENDIENTE;
-		return nueva;
+	/** Cuenta de un estudiante que se registró solo: queda activa de inmediato (registro libre, RF-01.4). */
+	public static Usuario registrada(String correo, String usuario, String contrasenaHash, LocalDateTime creadoEn) {
+		return new Usuario(correo, usuario, contrasenaHash, Rol.ESTUDIANTE, creadoEn);
 	}
 
-	/** Solo una cuenta aprobada y no desactivada puede iniciar sesión o usar un token. */
+	/** Solo una cuenta no desactivada puede iniciar sesión o usar un token. */
 	public boolean puedeIniciarSesion() {
-		return activo && estado == EstadoCuenta.ACTIVA;
-	}
-
-	public void aprobar() {
-		estado = EstadoCuenta.ACTIVA;
-	}
-
-	public void rechazar() {
-		estado = EstadoCuenta.RECHAZADA;
+		return activo;
 	}
 
 	/** Guarda el enlace de recuperación. Pedir otro sobrescribe el anterior, que deja de valer. */
@@ -153,8 +141,9 @@ public class Usuario {
 		return rol;
 	}
 
+	/** Estado que ve la API (docs/API.md): se deduce de {@code activo}, no se guarda. */
 	public EstadoCuenta getEstado() {
-		return estado;
+		return activo ? EstadoCuenta.ACTIVA : EstadoCuenta.DESACTIVADA;
 	}
 
 	public boolean isActivo() {

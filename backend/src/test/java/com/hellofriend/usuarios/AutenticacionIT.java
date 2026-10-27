@@ -96,7 +96,7 @@ class AutenticacionIT extends PruebaIntegracion {
 		repositorio.saveAndFlush(ana);
 
 		login("ana", CLAVE).andExpect(status().isForbidden())
-				.andExpect(jsonPath("$.mensaje").value("Tu cuenta no está activa."));
+				.andExpect(jsonPath("$.mensaje").value("Tu cuenta está desactivada."));
 	}
 
 	@Test

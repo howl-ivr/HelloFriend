@@ -88,7 +88,7 @@ problema y usa `flyway:repair`, o recrea la base.
 
 > **Actualizado:** el modelo de incidencias se consolidó en una sola `V2__modelo_incidencias.sql` (excepción a la regla de
 > migraciones pequeñas, porque aún no se había subido nada). Reemplaza las filas V2 a V12 de abajo, que quedan solo como
-> historial del plan inicial. `V3__usuarios_estado_cuenta.sql` agrega el estado de la cuenta (aprobación del administrador,
+> historial del plan inicial. `V3__usuarios_estado_cuenta.sql` agrega la columna `estado` (hoy sin uso: el registro es libre; ver la decisión de usuarios,
 > ver [`2026-10-27-usuarios-y-seguridad.md`](../decisiones/2026-10-27-usuarios-y-seguridad.md)); las siguientes migraciones
 > empiezan en `V4`. Motivos y cambios (periodo como columnas, tokens en
 > `usuarios_usuario`, auditoría como vista): [`2026-10-26-modelo-incidencias.md`](../decisiones/2026-10-26-modelo-incidencias.md).

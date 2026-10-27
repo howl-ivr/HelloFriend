@@ -120,11 +120,11 @@ class RecuperacionIT extends PruebaIntegracion {
 	}
 
 	@Test
-	void unaCuentaPendienteNoRecibeEnlaceYLaRespuestaEsLaMisma() throws Exception {
-		repositorio.saveAndFlush(
-				Usuario.solicitud("pedro@pucp.edu.pe", "pedro", codificador.encode(CLAVE), LocalDateTime.now()));
+	void unaCuentaDesactivadaNoRecibeEnlaceYLaRespuestaEsLaMisma() throws Exception {
+		ana.desactivar();
+		repositorio.saveAndFlush(ana);
 
-		recuperar("pedro@pucp.edu.pe").andExpect(status().isOk()).andExpect(jsonPath("$.mensaje").isNotEmpty());
+		recuperar("ana@pucp.edu.pe").andExpect(status().isOk()).andExpect(jsonPath("$.mensaje").isNotEmpty());
 
 		verify(notificador, never()).enviar(anyString(), anyString());
 	}

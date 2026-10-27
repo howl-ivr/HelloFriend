@@ -75,16 +75,10 @@ public class ServicioAutenticacion {
 		buscar(usuarioId).cerrarSesion();
 	}
 
-	/** Solo quien acierta la contraseña se entera del estado de la cuenta. */
+	/** Solo quien acierta la contraseña se entera de que la cuenta está desactivada. */
 	private static void exigirQuePuedaEntrar(Usuario usuario) {
-		switch (usuario.getEstado()) {
-			case PENDIENTE -> throw ExcepcionNegocio.prohibido("Tu cuenta está pendiente de aprobación.");
-			case RECHAZADA -> throw ExcepcionNegocio.prohibido("Tu solicitud de registro fue rechazada.");
-			case ACTIVA -> {
-				if (!usuario.isActivo()) {
-					throw ExcepcionNegocio.prohibido("Tu cuenta no está activa.");
-				}
-			}
+		if (!usuario.puedeIniciarSesion()) {
+			throw ExcepcionNegocio.prohibido("Tu cuenta está desactivada.");
 		}
 	}
 

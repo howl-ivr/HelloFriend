@@ -19,10 +19,9 @@ import com.hellofriend.compartido.seguridad.ServicioJwt;
 import com.hellofriend.usuarios.aplicacion.ServicioUsuarios;
 import com.hellofriend.usuarios.aplicacion.SolicitudCambioRol;
 import com.hellofriend.usuarios.aplicacion.UsuarioResumenDto;
-import com.hellofriend.usuarios.dominio.EstadoCuenta;
 import com.hellofriend.usuarios.dominio.Rol;
 
-/** Administración de cuentas (docs/API.md > Administrador). Solo el rol ADMINISTRADOR. */
+/** Gestión de usuarios (docs/API.md > Administrador). Solo el rol ADMINISTRADOR. */
 @RestController
 @RequestMapping("/admin/usuarios")
 @PreAuthorize("hasRole('ADMINISTRADOR')")
@@ -35,38 +34,23 @@ public class AdminUsuarioController {
 	}
 
 	/**
-	 * GET /admin/usuarios?estado=PENDIENTE&rol=PROFESOR: los más antiguos primero. Sin {@code rol}, estudiantes (el
-	 * contrato); sin {@code estado}, de todos los estados.
+	 * GET /admin/usuarios?buscar=&rol=: los más antiguos primero. {@code buscar} filtra por usuario o correo y
+	 * {@code rol} por rol; sin filtros devuelve todos. Es el único lugar donde se ve el correo.
 	 */
 	@GetMapping
-	public List<UsuarioResumenDto> listar(@RequestParam(required = false) EstadoCuenta estado,
+	public List<UsuarioResumenDto> listar(@RequestParam(required = false) String buscar,
 			@RequestParam(required = false) Rol rol) {
-		return servicio.listar(rol, estado);
+		return servicio.listar(rol, buscar);
 	}
 
-	/** PENDIENTE → ACTIVA. 409 si la cuenta ya no está pendiente. */
-	@PostMapping("/{id}/aprobar")
-	public UsuarioResumenDto aprobar(@PathVariable String id) {
-		return servicio.aprobar(id);
-	}
-
-	/** PENDIENTE → RECHAZADA. 409 si la cuenta ya no está pendiente. */
-	@PostMapping("/{id}/rechazar")
-	public UsuarioResumenDto rechazar(@PathVariable String id) {
-		return servicio.rechazar(id);
-	}
-
-	/**
-	 * PUT /admin/usuarios/{id}/rol {rol}. Cierra las sesiones del usuario. 400 si es el propio; 409 si no está
-	 * aprobada.
-	 */
+	/** PUT /admin/usuarios/{id}/rol {rol}. Cierra las sesiones de ese usuario. 403 si es el propio. */
 	@PutMapping("/{id}/rol")
 	public UsuarioResumenDto cambiarRol(@PathVariable String id, @Valid @RequestBody SolicitudCambioRol solicitud,
 			Authentication autenticacion) {
 		return servicio.cambiarRol(id, solicitud.rol(), ServicioJwt.usuarioActual(autenticacion));
 	}
 
-	/** Deja la cuenta sin acceso y cierra sus sesiones. 400 si es la propia; 409 si ya está desactivada. */
+	/** Deja la cuenta sin acceso y cierra sus sesiones. 403 si es la propia; 409 si ya está desactivada. */
 	@PostMapping("/{id}/desactivar")
 	public UsuarioResumenDto desactivar(@PathVariable String id, Authentication autenticacion) {
 		return servicio.desactivar(id, ServicioJwt.usuarioActual(autenticacion));

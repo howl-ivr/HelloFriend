@@ -45,15 +45,17 @@ public class AutenticacionController {
 		this.recuperacion = recuperacion;
 	}
 
-	/** POST /auth/registro {correo, usuario, password} → 201 {mensaje}. La cuenta queda PENDIENTE. */
+	/** POST /auth/registro {correo, usuario, password} → 201 {mensaje}. La cuenta queda activa como ESTUDIANTE. */
 	@PostMapping("/registro")
 	@ResponseStatus(HttpStatus.CREATED)
 	public Map<String, String> registrar(@Valid @RequestBody SolicitudRegistro solicitud) {
 		registro.registrar(solicitud);
-		return Map.of("mensaje", "Tu solicitud fue registrada. Un administrador revisará tu cuenta.");
+		return Map.of("mensaje", "Tu cuenta fue creada. Ya puedes iniciar sesión.");
 	}
 
-	/** POST /auth/login {usuario, password} → {token, usuario, rol}. 401 si falla; 403 si la cuenta no está activa. */
+	/**
+	 * POST /auth/login {usuario, password} → {token, usuario, rol}. 401 si falla; 403 si la cuenta está desactivada.
+	 */
 	@PostMapping("/login")
 	public RespuestaLogin login(@Valid @RequestBody SolicitudLogin solicitud) {
 		return servicio.iniciarSesion(solicitud);

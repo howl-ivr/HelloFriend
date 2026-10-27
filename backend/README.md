@@ -3,7 +3,7 @@
 API REST en **Java 21 + Spring Boot 4.1** con **MySQL 8.0**, Flyway, Spring Data JPA y Maven Wrapper. Formato con
 Spotless; pruebas unitarias con Surefire (`*Tests`) y de integración con Failsafe (`*IT`).
 
-> Estado: están el catálogo de cursos y el módulo `usuarios` (registro con aprobación del administrador, login con JWT,
+> Estado: están el catálogo de cursos y el módulo `usuarios` (registro libre, login con JWT,
 > cierre de sesión, recuperación y cambio de contraseña, protección por rol). Diseño y decisiones pendientes:
 > [`docs/decisiones/2026-10-27-usuarios-y-seguridad.md`](../docs/decisiones/2026-10-27-usuarios-y-seguridad.md).
 > **Falta acordar con el frontend (`docs/API.md`, en `origin/front/setup`):** rol `ADMIN` frente a `ADMINISTRADOR`, ids
@@ -63,7 +63,7 @@ Una migración ya subida nunca se edita.
 | --- | --- |
 | `V1__usuarios_cuentas.sql` | Tabla `usuarios_usuario` (correo, usuario de hasta 15 caracteres, contraseña cifrada, rol, activo) |
 | `V2__modelo_incidencias.sql` | Columnas de sesión y recuperación en `usuarios_usuario`; tablas `academico_curso`, `canales_canal`, `canales_suscripcion`, `incidencias_categoria` (8 categorías cargadas), `incidencias_incidencia`, `incidencias_version`, `incidencias_observacion`, `incidencias_confirmacion`, `incidencias_historial_estado`, `notificaciones_notificacion` y la vista `auditoria_historial_incidencia` |
-| `V3__usuarios_estado_cuenta.sql` | Columna `estado` (`PENDIENTE`, `ACTIVA`, `RECHAZADA`; por defecto `ACTIVA`) en `usuarios_usuario` |
+| `V3__usuarios_estado_cuenta.sql` | Columna `estado` (`PENDIENTE`, `ACTIVA`, `RECHAZADA`; por defecto `ACTIVA`) en `usuarios_usuario`. **Sin uso:** el contrato eliminó la aprobación de cuentas y la entidad no la mapea; la base la rellena con `ACTIVA` |
 
 Datos de prueba (usuarios demo con clave `Prueba#2026`, canales e incidencias en cada estado): `db/datos-prueba/R__datos_prueba.sql`. Solo se cargan si defines `FLYWAY_LOCATIONS=classpath:db/migration,classpath:db/datos-prueba` en tu `.env` local o en un servidor de pruebas; nunca en producción. Las pruebas de integración no los cargan.
 
@@ -76,19 +76,17 @@ rol, 403 (`{ "mensaje": "No tienes permiso para realizar esta acción." }`).
 | Método | Ruta | Rol | Qué hace |
 | --- | --- | --- | --- |
 | GET | `/actuator/health` | público | Estado de la aplicación |
-| POST | `/auth/registro` | público | `{ correo, usuario, password }` → 201 `{ mensaje }`. La cuenta queda `PENDIENTE` como ESTUDIANTE. 400 si el correo no es `@pucp.edu.pe`, el usuario no cumple `^[a-zA-Z0-9._-]{3,15}$` o la contraseña no tiene de 6 a 64 caracteres; 409 si el usuario o el correo ya existen |
-| POST | `/auth/login` | público | `{ usuario, password }` → `{ token, usuario, rol }`. 401 si las credenciales fallan (mismo mensaje exista o no el usuario); 403 si la cuenta está `PENDIENTE`, `RECHAZADA` o desactivada |
+| POST | `/auth/registro` | público | `{ correo, usuario, password }` → 201 `{ mensaje }`. La cuenta queda `ACTIVA` como ESTUDIANTE, sin aprobación del administrador. 400 si el correo no es `@pucp.edu.pe`, el usuario no cumple `^[a-zA-Z0-9._-]{3,15}$` o la contraseña no tiene de 6 a 64 caracteres; 409 si el usuario o el correo ya existen |
+| POST | `/auth/login` | público | `{ usuario, password }` → `{ token, usuario, rol }`. 401 si las credenciales fallan (mismo mensaje exista o no el usuario); 403 si la cuenta está desactivada |
 | POST | `/auth/recuperar` | público | `{ correo }` → 200 `{ mensaje }` siempre, exista o no el correo. Si es de una cuenta que puede entrar, envía un enlace `FRONTEND_URL/restablecer?token=...` (vence en `RECUPERACION_MINUTOS`, 30 por defecto). Pedir otro invalida el anterior |
 | POST | `/auth/restablecer` | público | `{ token, password }` → 200 `{ mensaje }`. Cambia la contraseña, consume el enlace (un solo uso) y cierra todas las sesiones. 400 si el enlace es desconocido, vencido o usado (mismo mensaje) o si la contraseña no tiene de 6 a 64 caracteres |
 | GET | `/auth/me` | autenticado | `{ usuario, rol }` del token; nunca devuelve el correo |
 | PUT | `/auth/me/contrasena` | autenticado | `{ contrasenaActual, contrasenaNueva }` → `{ token, usuario, rol }`. Cierra todas las sesiones (suma 1 a `version_sesion`) y devuelve un token nuevo para seguir dentro; anula un enlace de recuperación pendiente. 400 si la actual es incorrecta (no 401, para no parecer sesión vencida), si la nueva es igual a la actual o no tiene de 6 a 64 caracteres |
 | POST | `/auth/logout` | autenticado | 204; suma 1 a `version_sesion`, así que todos los tokens anteriores dejan de valer |
-| GET | `/admin/usuarios` | ADMINISTRADOR | `[{ id, usuario, rol, estado, activo, fechaRegistro }]`, los más antiguos primero, sin correo. Sin `?rol=` lista estudiantes (contrato); con `?rol=PROFESOR` etc., ese rol. `?estado=PENDIENTE\|ACTIVA\|RECHAZADA` filtra; un valor desconocido da 400 |
-| POST | `/admin/usuarios/{id}/aprobar` | ADMINISTRADOR | `PENDIENTE` → `ACTIVA`; devuelve el usuario. 404 si no existe; 409 si ya no está pendiente |
-| POST | `/admin/usuarios/{id}/rechazar` | ADMINISTRADOR | `PENDIENTE` → `RECHAZADA`; mismos errores |
-| PUT | `/admin/usuarios/{id}/rol` | ADMINISTRADOR | `{ rol }` → el usuario. Solo cuentas aprobadas; cierra las sesiones de esa persona; mismo rol no hace nada. 400 si es el propio rol o el valor no es un rol; 404; 409 si la cuenta no está aprobada |
-| POST | `/admin/usuarios/{id}/desactivar` | ADMINISTRADOR | `activo` pasa a `false` y se cierran sus sesiones; el login responde 403. 400 si es la propia cuenta; 404; 409 si ya está desactivada o no está aprobada |
-| POST | `/admin/usuarios/{id}/reactivar` | ADMINISTRADOR | `activo` pasa a `true`; las sesiones anteriores no reviven. 404; 409 si ya está activa o no está aprobada |
+| GET | `/admin/usuarios` | ADMINISTRADOR | `[{ id, usuario, correo, rol, estado, fechaRegistro }]`, los más antiguos primero. `?buscar=` filtra por usuario o correo y `?rol=` por rol; sin filtros devuelve todos. `estado` es `ACTIVA` o `DESACTIVADA`. Es el único lugar donde se ve el correo. Un rol desconocido da 400 |
+| PUT | `/admin/usuarios/{id}/rol` | ADMINISTRADOR | `{ rol }` → el usuario. Cierra las sesiones de esa persona; si el rol es el mismo no hace nada. 403 si es la propia cuenta; 400 si el valor no es un rol; 404 |
+| POST | `/admin/usuarios/{id}/desactivar` | ADMINISTRADOR | La cuenta queda `DESACTIVADA`, se cierran sus sesiones y el login responde 403; conserva su historial. 403 si es la propia cuenta; 404; 409 si ya está desactivada |
+| POST | `/admin/usuarios/{id}/reactivar` | ADMINISTRADOR | La cuenta vuelve a `ACTIVA`; las sesiones anteriores no reviven. No está en `docs/API.md`. 404; 409 si ya está activa |
 | POST | `/admin/cursos` | ADMINISTRADOR | Crea un curso `{ codigo, nombre }`. El id y `creadoEn` los genera el sistema. 201; 409 si el código ya existe |
 | GET | `/admin/cursos` | ADMINISTRADOR | Lista todos los cursos por código; con `?nombre=` filtra por parte del nombre (sin importar mayúsculas ni tildes) |
 | GET | `/admin/cursos/{id}` | ADMINISTRADOR | Busca un curso por id; 404 si no existe |
